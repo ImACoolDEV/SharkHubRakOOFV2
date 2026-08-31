@@ -1,0 +1,325 @@
+-- Shark Hub | Deep Sea Themed Utility GUI
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Configuration Variables
+local AUTO_PICKUP_ENABLED = true
+local TOGGLE_KEY = Enum.KeyCode.RightControl
+
+--------------------------------------------------------------------------------
+-- 1. FANCY SHARK GUI SETUP
+--------------------------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SharkHubCustom"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 350, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -175, 0.35, -240)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 35) -- Deep Ocean Dark Blue
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Parent = ScreenGui
+
+local FrameCorner = Instance.new("UICorner")
+FrameCorner.CornerRadius = UDim.new(0, 16)
+FrameCorner.Parent = MainFrame
+
+local FrameStroke = Instance.new("UIStroke")
+FrameStroke.Thickness = 2
+FrameStroke.Color = Color3.fromRGB(0, 210, 255) -- Cyan Glow Outline
+FrameStroke.Transparency = 0.3
+FrameStroke.Parent = MainFrame
+
+-- Header Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 50)
+TitleBar.BackgroundColor3 = Color3.fromRGB(10, 18, 26) -- Dark Midnight Header
+TitleBar.BackgroundTransparency = 0.2
+TitleBar.Active = true
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 16)
+TitleCorner.Parent = TitleBar
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(1, -120, 1, 0)
+TitleText.Position = UDim2.new(0, 14, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "🦈 Shark Hub [RightCtrl]"
+TitleText.TextColor3 = Color3.fromRGB(220, 245, 255)
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 16
+TitleText.Parent = TitleBar
+
+-- Animated ASCII Shark Display
+local SharkLabel = Instance.new("TextLabel")
+SharkLabel.Size = UDim2.new(0, 110, 0, 35)
+SharkLabel.Position = UDim2.new(1, -115, 0, 7)
+SharkLabel.BackgroundTransparency = 1
+SharkLabel.Text = "( shark-bite )"
+SharkLabel.TextColor3 = Color3.fromRGB(0, 200, 240)
+SharkLabel.Font = Enum.Font.Code
+SharkLabel.TextSize = 13
+SharkLabel.Parent = TitleBar
+
+local sharkFrames = {"( shark-bite )", "( deep-sea )", "( 🦈-apex )", "( hunt-mode )"}
+task.spawn(function()
+    local index = 1
+    while task.wait(0.4) do
+        SharkLabel.Text = sharkFrames[index]
+        index = (index % #sharkFrames) + 1
+    end
+end)
+
+-- Smooth Dragging Logic
+local dragging, dragInput, dragStart, startPos
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Layout Container
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, 0, 1, -55)
+Container.Position = UDim2.new(0, 0, 0, 55)
+Container.BackgroundTransparency = 1
+Container.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = Container
+
+--------------------------------------------------------------------------------
+-- 2. STYLIZED SHARK BUTTON BUILDER
+--------------------------------------------------------------------------------
+local function CreateButton(text, order, initialActive)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.92, 0, 0, 42)
+    btn.BackgroundColor3 = initialActive and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+    btn.BackgroundTransparency = 0.2
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(240, 250, 255)
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 14
+    btn.LayoutOrder = order
+    btn.Parent = Container
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = btn
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1
+    stroke.Color = Color3.fromRGB(0, 200, 255)
+    stroke.Transparency = 0.6
+    stroke.Parent = btn
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.05}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
+    end)
+    
+    return btn
+end
+
+local CaveABtn = CreateButton("⛰️ Teleport to Cave A", 1, false)
+local CaveBBtn = CreateButton("⛰️ Teleport to Cave B", 2, false)
+local SafezoneBtn = CreateButton("🛡️ Safezone Teleport", 3, false)
+local AutoLootBtn = CreateButton("🍊 Auto Pickup: ON", 4, true)
+
+--------------------------------------------------------------------------------
+-- 3. KEYBIND TOGGLE
+--------------------------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == TOGGLE_KEY then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 4. CAVE A & CAVE B TELEPORT LOGIC
+--------------------------------------------------------------------------------
+local function findLocationPart(targetName)
+    -- Path 1: Workspace.Misc.RakoofSpawns
+    local miscFolder = Workspace:FindFirstChild("Misc")
+    if miscFolder then
+        local rakoofSpawns = miscFolder:FindFirstChild("RakoofSpawns")
+        if rakoofSpawns then
+            local found = rakoofSpawns:FindFirstChild(targetName)
+            if found then return found end
+        end
+    end
+
+    -- Path 2: Workspace.LocationsIndicator
+    local locFolder = Workspace:FindFirstChild("LocationsIndicator")
+    if locFolder then
+        local targetAltName = (targetName == "CaveA") and "Cave1" or (targetName == "CaveB") and "Cave2" or targetName
+        local found = locFolder:FindFirstChild(targetAltName) or locFolder:FindFirstChild(targetName)
+        if found then return found end
+    end
+
+    -- Fallback: Search all Workspace descendants
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj.Name == targetName then
+            return obj
+        end
+    end
+
+    return nil
+end
+
+local function teleportToLocation(targetName)
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local targetObj = findLocationPart(targetName)
+    if targetObj then
+        if targetObj:IsA("BasePart") then
+            character.HumanoidRootPart.CFrame = targetObj.CFrame + Vector3.new(0, 3, 0)
+        elseif targetObj:IsA("Model") then
+            local primary = targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")
+            if primary then
+                character.HumanoidRootPart.CFrame = primary.CFrame + Vector3.new(0, 3, 0)
+            end
+        end
+    else
+        warn("Target location '" .. targetName .. "' could not be found.")
+    end
+end
+
+CaveABtn.MouseButton1Click:Connect(function()
+    teleportToLocation("CaveA")
+end)
+
+CaveBBtn.MouseButton1Click:Connect(function()
+    teleportToLocation("CaveB")
+end)
+
+--------------------------------------------------------------------------------
+-- 5. SAFEZONE TELEPORT LOGIC
+--------------------------------------------------------------------------------
+local function findSafezoneNPC()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and not Players:GetPlayerFromCharacter(obj) then
+            local nameLower = string.lower(obj.Name)
+            if string.find(nameLower, "ready") or string.find(nameLower, "safe") or string.find(nameLower, "spawn") or string.find(nameLower, "npc") then
+                local root = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso") or obj.PrimaryPart
+                if root then return root end
+            end
+        end
+    end
+    return nil
+end
+
+SafezoneBtn.MouseButton1Click:Connect(function()
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local targetNPC = findSafezoneNPC()
+    if targetNPC then
+        character.HumanoidRootPart.CFrame = targetNPC.CFrame * CFrame.new(0, 0, -3)
+    else
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("SpawnLocation") then
+                character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3.5, 0)
+                break
+            end
+        end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 6. DROPPED ITEM HIGHLIGHT & AUTO PICKUP
+--------------------------------------------------------------------------------
+local function markDroppedItems()
+    for _, item in ipairs(Workspace:GetChildren()) do
+        if (item:IsA("Tool") or item:IsA("Model") or item:IsA("BasePart")) and not Players:GetPlayerFromCharacter(item) then
+            if not item:FindFirstChild("SharkItemHighlight") and (item:FindFirstChild("Handle") or item:IsA("BasePart")) then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "SharkItemHighlight"
+                highlight.FillColor = Color3.fromRGB(0, 210, 255)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.3
+                highlight.OutlineTransparency = 0
+                highlight.Parent = item
+            end
+        end
+    end
+end
+
+local function teleportToDroppedItems()
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:FindFirstChild("SharkItemHighlight") then
+            local targetCFrame = nil
+            if obj:IsA("BasePart") then
+                targetCFrame = obj.CFrame
+            elseif obj:FindFirstChild("Handle") then
+                targetCFrame = obj.Handle.CFrame
+            elseif obj.PrimaryPart then
+                targetCFrame = obj.PrimaryPart.CFrame
+            end
+
+            if targetCFrame then
+                character.HumanoidRootPart.CFrame = targetCFrame
+                task.wait(0.1)
+            end
+        end
+    end
+end
+
+AutoLootBtn.MouseButton1Click:Connect(function()
+    AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
+    AutoLootBtn.Text = AUTO_PICKUP_ENABLED and "🍊 Auto Pickup: ON" or "🍊 Auto Pickup: OFF"
+    AutoLootBtn.BackgroundColor3 = AUTO_PICKUP_ENABLED and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+end)
+
+RunService.RenderStepped:Connect(function()
+    if AUTO_PICKUP_ENABLED then
+        markDroppedItems()
+        teleportToDroppedItems()
+    end
+end)
