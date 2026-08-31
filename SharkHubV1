@@ -1,4 +1,4 @@
--- Shark Hub | Deep Sea Themed Utility GUI
+-- Shark Hub V2 | Complete Combined Utility GUI
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -11,21 +11,81 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Configuration Variables
+local TARGET_NAME = "rakoof"
+local AUTO_KILL_ENABLED = false
 local AUTO_PICKUP_ENABLED = true
-local TOGGLE_KEY = Enum.KeyCode.RightControl
+local GODMODE_ENABLED = false
+local BRING_BOSS_ENABLED = false
+local EXPAND_HITBOX_ENABLED = false
+local SPEED_BOOST_ENABLED = false
+local TOGGLE_KEY = Enum.KeyCode.RightControl 
+
+local connectionLoop = nil
+local bringLoop = nil
+local godConnection = nil
+local originalHitboxData = {}
+
+-- Weapon Priority List (Highest to Lowest)
+local WEAPON_PRIORITY = {
+    "TormentumAxe",
+    "Murasama",
+    "Ruinstrikers",
+    "StunStick"
+}
+
+--------------------------------------------------------------------------------
+-- HELPER FUNCTIONS
+--------------------------------------------------------------------------------
+local function safeTeleportBehind(targetRoot)
+    local character = LocalPlayer.Character
+    if not character then return end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp or not targetRoot then return end
+
+    -- Temporary noclip on character parts to prevent physics engine from launching you into the sky
+    for _, part in ipairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+
+    local targetCF = targetRoot.CFrame
+    local behindPosition = targetCF.Position - (targetCF.LookVector * 3.5)
+    
+    hrp.CFrame = CFrame.new(behindPosition, targetCF.Position)
+end
+
+local function findBossRoot()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
+            local nameLower = string.lower(obj.Name)
+            if string.find(nameLower, TARGET_NAME) or string.find(nameLower, "ashbound") then
+                local targetPart = obj:FindFirstChild("HumanoidRootPart") 
+                    or obj:FindFirstChild("Torso") 
+                    or obj:FindFirstChild("UpperTorso") 
+                    or obj.PrimaryPart
+                
+                if targetPart then
+                    return obj, targetPart
+                end
+            end
+        end
+    end
+    return nil, nil
+end
 
 --------------------------------------------------------------------------------
 -- 1. FANCY SHARK GUI SETUP
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SharkHubCustom"
+ScreenGui.Name = "SharkHubV2"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 350, 0, 480)
-MainFrame.Position = UDim2.new(0.5, -175, 0.35, -240)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 35) -- Deep Ocean Dark Blue
+MainFrame.Size = UDim2.new(0, 350, 0, 650)
+MainFrame.Position = UDim2.new(0.5, -175, 0.35, -325)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 35)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -37,14 +97,14 @@ FrameCorner.Parent = MainFrame
 
 local FrameStroke = Instance.new("UIStroke")
 FrameStroke.Thickness = 2
-FrameStroke.Color = Color3.fromRGB(0, 210, 255) -- Cyan Glow Outline
+FrameStroke.Color = Color3.fromRGB(0, 210, 255)
 FrameStroke.Transparency = 0.3
 FrameStroke.Parent = MainFrame
 
 -- Header Bar
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 50)
-TitleBar.BackgroundColor3 = Color3.fromRGB(10, 18, 26) -- Dark Midnight Header
+TitleBar.BackgroundColor3 = Color3.fromRGB(10, 18, 26)
 TitleBar.BackgroundTransparency = 0.2
 TitleBar.Active = true
 TitleBar.Parent = MainFrame
@@ -57,14 +117,14 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -120, 1, 0)
 TitleText.Position = UDim2.new(0, 14, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 Shark Hub [RightCtrl]"
+TitleText.Text = "🦈 Shark Hub V2 [RightCtrl]"
 TitleText.TextColor3 = Color3.fromRGB(220, 245, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
-TitleText.TextSize = 16
+TitleText.TextSize = 15
 TitleText.Parent = TitleBar
 
--- Animated ASCII Shark Display
+-- Animated ASCII Display
 local SharkLabel = Instance.new("TextLabel")
 SharkLabel.Size = UDim2.new(0, 110, 0, 35)
 SharkLabel.Position = UDim2.new(1, -115, 0, 7)
@@ -84,7 +144,7 @@ task.spawn(function()
     end
 end)
 
--- Smooth Dragging Logic
+-- Dragging Logic
 local dragging, dragInput, dragStart, startPos
 
 TitleBar.InputBegan:Connect(function(input)
@@ -122,23 +182,23 @@ Container.BackgroundTransparency = 1
 Container.Parent = MainFrame
 
 local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.Padding = UDim.new(0, 6)
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = Container
 
 --------------------------------------------------------------------------------
--- 2. STYLIZED SHARK BUTTON BUILDER
+-- 2. BUTTON BUILDER
 --------------------------------------------------------------------------------
 local function CreateButton(text, order, initialActive)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.92, 0, 0, 42)
+    btn.Size = UDim2.new(0.92, 0, 0, 36)
     btn.BackgroundColor3 = initialActive and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
     btn.BackgroundTransparency = 0.2
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(240, 250, 255)
     btn.Font = Enum.Font.GothamMedium
-    btn.TextSize = 14
+    btn.TextSize = 13
     btn.LayoutOrder = order
     btn.Parent = Container
     
@@ -164,8 +224,15 @@ end
 
 local CaveABtn = CreateButton("⛰️ Teleport to Cave A", 1, false)
 local CaveBBtn = CreateButton("⛰️ Teleport to Cave B", 2, false)
-local SafezoneBtn = CreateButton("🛡️ Safezone Teleport", 3, false)
-local AutoLootBtn = CreateButton("🍊 Auto Pickup: ON", 4, true)
+local SafezoneBtn = CreateButton("🛡️ Teleport to Safezone", 3, false)
+local TPBtn = CreateButton("🎯 Teleport Behind RakOOF", 4, false)
+local AutoKillBtn = CreateButton("⚔️ Auto Attack RakOOF: OFF", 5, false)
+local GodModeBtn = CreateButton("🛡️ God Mode: OFF", 6, false)
+local AutoLootBtn = CreateButton("🍊 Auto Pickup: ON", 7, true)
+local BringBtn = CreateButton("🧲 Bring RakOOF: OFF", 8, false)
+local HitboxBtn = CreateButton("📦 Expand RakOOF Hitbox: OFF", 9, false)
+local SpeedBtn = CreateButton("⚡ Speed Boost: OFF", 10, false)
+local FogBtn = CreateButton("💡 No Fog / Fullbright: OFF", 11, false)
 
 --------------------------------------------------------------------------------
 -- 3. KEYBIND TOGGLE
@@ -178,34 +245,27 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 --------------------------------------------------------------------------------
--- 4. CAVE A & CAVE B TELEPORT LOGIC
+-- 4. CAVE A & CAVE B TELEPORTS
 --------------------------------------------------------------------------------
 local function findLocationPart(targetName)
-    -- Path 1: Workspace.Misc.RakoofSpawns
     local miscFolder = Workspace:FindFirstChild("Misc")
     if miscFolder then
         local rakoofSpawns = miscFolder:FindFirstChild("RakoofSpawns")
-        if rakoofSpawns then
-            local found = rakoofSpawns:FindFirstChild(targetName)
-            if found then return found end
+        if rakoofSpawns and rakoofSpawns:FindFirstChild(targetName) then
+            return rakoofSpawns:FindFirstChild(targetName)
         end
     end
 
-    -- Path 2: Workspace.LocationsIndicator
     local locFolder = Workspace:FindFirstChild("LocationsIndicator")
     if locFolder then
         local targetAltName = (targetName == "CaveA") and "Cave1" or (targetName == "CaveB") and "Cave2" or targetName
-        local found = locFolder:FindFirstChild(targetAltName) or locFolder:FindFirstChild(targetName)
-        if found then return found end
+        if locFolder:FindFirstChild(targetAltName) then return locFolder:FindFirstChild(targetAltName) end
+        if locFolder:FindFirstChild(targetName) then return locFolder:FindFirstChild(targetName) end
     end
 
-    -- Fallback: Search all Workspace descendants
     for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj.Name == targetName then
-            return obj
-        end
+        if obj.Name == targetName then return obj end
     end
-
     return nil
 end
 
@@ -215,102 +275,135 @@ local function teleportToLocation(targetName)
     
     local targetObj = findLocationPart(targetName)
     if targetObj then
-        if targetObj:IsA("BasePart") then
-            character.HumanoidRootPart.CFrame = targetObj.CFrame + Vector3.new(0, 3, 0)
-        elseif targetObj:IsA("Model") then
-            local primary = targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")
-            if primary then
-                character.HumanoidRootPart.CFrame = primary.CFrame + Vector3.new(0, 3, 0)
-            end
+        local targetPart = targetObj:IsA("BasePart") and targetObj or (targetObj:IsA("Model") and (targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")))
+        if targetPart then
+            character.HumanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
         end
-    else
-        warn("Target location '" .. targetName .. "' could not be found.")
     end
 end
 
-CaveABtn.MouseButton1Click:Connect(function()
-    teleportToLocation("CaveA")
-end)
-
-CaveBBtn.MouseButton1Click:Connect(function()
-    teleportToLocation("CaveB")
-end)
+CaveABtn.MouseButton1Click:Connect(function() teleportToLocation("CaveA") end)
+CaveBBtn.MouseButton1Click:Connect(function() teleportToLocation("CaveB") end)
 
 --------------------------------------------------------------------------------
--- 5. SAFEZONE TELEPORT LOGIC
+-- 5. SAFEZONE TELEPORT
 --------------------------------------------------------------------------------
-local function findSafezoneNPC()
+SafezoneBtn.MouseButton1Click:Connect(function()
+    local character = LocalPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") and not Players:GetPlayerFromCharacter(obj) then
             local nameLower = string.lower(obj.Name)
             if string.find(nameLower, "ready") or string.find(nameLower, "safe") or string.find(nameLower, "spawn") or string.find(nameLower, "npc") then
                 local root = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso") or obj.PrimaryPart
-                if root then return root end
+                if root then
+                    character.HumanoidRootPart.CFrame = root.CFrame * CFrame.new(0, 0, -3)
+                    return
+                end
             end
         end
     end
-    return nil
-end
 
-SafezoneBtn.MouseButton1Click:Connect(function()
-    local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-    
-    local targetNPC = findSafezoneNPC()
-    if targetNPC then
-        character.HumanoidRootPart.CFrame = targetNPC.CFrame * CFrame.new(0, 0, -3)
-    else
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("SpawnLocation") then
-                character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3.5, 0)
-                break
-            end
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("SpawnLocation") then
+            character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3.5, 0)
+            break
         end
     end
 end)
 
 --------------------------------------------------------------------------------
--- 6. DROPPED ITEM HIGHLIGHT & AUTO PICKUP
+-- 6. GOD MODE LOGIC
 --------------------------------------------------------------------------------
-local function markDroppedItems()
-    for _, item in ipairs(Workspace:GetChildren()) do
-        if (item:IsA("Tool") or item:IsA("Model") or item:IsA("BasePart")) and not Players:GetPlayerFromCharacter(item) then
-            if not item:FindFirstChild("SharkItemHighlight") and (item:FindFirstChild("Handle") or item:IsA("BasePart")) then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "SharkItemHighlight"
-                highlight.FillColor = Color3.fromRGB(0, 210, 255)
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.3
-                highlight.OutlineTransparency = 0
-                highlight.Parent = item
+GodModeBtn.MouseButton1Click:Connect(function()
+    GODMODE_ENABLED = not GODMODE_ENABLED
+    GodModeBtn.Text = GODMODE_ENABLED and "🛡️ God Mode: ON" or "🛡️ God Mode: OFF"
+    GodModeBtn.BackgroundColor3 = GODMODE_ENABLED and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+
+    if GODMODE_ENABLED then
+        godConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                hum.Health = hum.MaxHealth
             end
+        end)
+    else
+        if godConnection then
+            godConnection:Disconnect()
+            godConnection = nil
         end
     end
-end
+end)
 
-local function teleportToDroppedItems()
+--------------------------------------------------------------------------------
+-- 7. WEAPON & AUTO ATTACK
+--------------------------------------------------------------------------------
+local function getBestWeapon()
     local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not character or not backpack then return nil end
 
-    for _, obj in ipairs(Workspace:GetChildren()) do
-        if obj:FindFirstChild("SharkItemHighlight") then
-            local targetCFrame = nil
-            if obj:IsA("BasePart") then
-                targetCFrame = obj.CFrame
-            elseif obj:FindFirstChild("Handle") then
-                targetCFrame = obj.Handle.CFrame
-            elseif obj.PrimaryPart then
-                targetCFrame = obj.PrimaryPart.CFrame
-            end
+    for _, weaponName in ipairs(WEAPON_PRIORITY) do
+        local equipped = character:FindFirstChild(weaponName)
+        if equipped and equipped:IsA("Tool") then return equipped end
+        
+        local inBackpack = backpack:FindFirstChild(weaponName)
+        if inBackpack and inBackpack:IsA("Tool") then return inBackpack end
+    end
+    
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then return tool end
+    end
 
-            if targetCFrame then
-                character.HumanoidRootPart.CFrame = targetCFrame
-                task.wait(0.1)
-            end
+    return nil
+end
+
+local function equipAndAttack()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local bestTool = getBestWeapon()
+    
+    if humanoid and bestTool then
+        if bestTool.Parent ~= character then
+            humanoid:EquipTool(bestTool)
         end
+        bestTool:Activate()
     end
 end
 
+TPBtn.MouseButton1Click:Connect(function()
+    local _, bossRoot = findBossRoot()
+    if bossRoot then safeTeleportBehind(bossRoot) end
+end)
+
+AutoKillBtn.MouseButton1Click:Connect(function()
+    AUTO_KILL_ENABLED = not AUTO_KILL_ENABLED
+    AutoKillBtn.Text = AUTO_KILL_ENABLED and "⚔️ Auto Attack RakOOF: ON" or "⚔️ Auto Attack RakOOF: OFF"
+    AutoKillBtn.BackgroundColor3 = AUTO_KILL_ENABLED and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+    
+    if AUTO_KILL_ENABLED then
+        connectionLoop = RunService.Heartbeat:Connect(function()
+            local _, bossRoot = findBossRoot()
+            if bossRoot then
+                safeTeleportBehind(bossRoot)
+                equipAndAttack()
+            end
+        end)
+    else
+        if connectionLoop then
+            connectionLoop:Disconnect()
+            connectionLoop = nil
+        end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 8. AUTO PICKUP & HIGHLIGHTS
+--------------------------------------------------------------------------------
 AutoLootBtn.MouseButton1Click:Connect(function()
     AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
     AutoLootBtn.Text = AUTO_PICKUP_ENABLED and "🍊 Auto Pickup: ON" or "🍊 Auto Pickup: OFF"
@@ -319,7 +412,74 @@ end)
 
 RunService.RenderStepped:Connect(function()
     if AUTO_PICKUP_ENABLED then
-        markDroppedItems()
-        teleportToDroppedItems()
+        for _, item in ipairs(Workspace:GetChildren()) do
+            if (item:IsA("Tool") or item:IsA("Model") or item:IsA("BasePart")) and not Players:GetPlayerFromCharacter(item) then
+                local character = LocalPlayer.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    local targetCFrame = item:IsA("BasePart") and item.CFrame or (item:FindFirstChild("Handle") and item.Handle.CFrame) or (item.PrimaryPart and item.PrimaryPart.CFrame)
+                    if targetCFrame then
+                        character.HumanoidRootPart.CFrame = targetCFrame
+                    end
+                end
+            end
+        end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 9. BRING BOSS, HITBOX, SPEED & FULLBRIGHT
+--------------------------------------------------------------------------------
+BringBtn.MouseButton1Click:Connect(function()
+    BRING_BOSS_ENABLED = not BRING_BOSS_ENABLED
+    BringBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring RakOOF: ON" or "🧲 Bring RakOOF: OFF"
+    BringBtn.BackgroundColor3 = BRING_BOSS_ENABLED and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+    
+    if BRING_BOSS_ENABLED then
+        bringLoop = RunService.Heartbeat:Connect(function()
+            local _, bossRoot = findBossRoot()
+            local character = LocalPlayer.Character
+            if bossRoot and character and character:FindFirstChild("HumanoidRootPart") then
+                bossRoot.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3.5)
+            end
+        end)
+    else
+        if bringLoop then bringLoop:Disconnect() bringLoop = nil end
+    end
+end)
+
+HitboxBtn.MouseButton1Click:Connect(function()
+    EXPAND_HITBOX_ENABLED = not EXPAND_HITBOX_ENABLED
+    HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand RakOOF Hitbox: ON" or "📦 Expand RakOOF Hitbox: OFF"
+    HitboxBtn.BackgroundColor3 = EXPAND_HITBOX_ENABLED and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+    
+    local _, bossRoot = findBossRoot()
+    if EXPAND_HITBOX_ENABLED and bossRoot then
+        bossRoot.Size = Vector3.new(20, 20, 20)
+        bossRoot.Transparency = 0.7
+        bossRoot.CanCollide = false
+    end
+end)
+
+SpeedBtn.MouseButton1Click:Connect(function()
+    SPEED_BOOST_ENABLED = not SPEED_BOOST_ENABLED
+    SpeedBtn.Text = SPEED_BOOST_ENABLED and "⚡ Speed Boost: ON" or "⚡ Speed Boost: OFF"
+    SpeedBtn.BackgroundColor3 = SPEED_BOOST_ENABLED and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+    
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChildOfClass("Humanoid") then
+        character:FindFirstChildOfClass("Humanoid").WalkSpeed = SPEED_BOOST_ENABLED and 32 or 16
+    end
+end)
+
+local defaultFog = Lighting.FogEnd
+local noFogActive = false
+FogBtn.MouseButton1Click:Connect(function()
+    noFogActive = not noFogActive
+    FogBtn.Text = noFogActive and "💡 No Fog / Fullbright: ON" or "💡 No Fog / Fullbright: OFF"
+    FogBtn.BackgroundColor3 = noFogActive and Color3.fromRGB(0, 140, 180) or Color3.fromRGB(20, 45, 65)
+    
+    Lighting.FogEnd = noFogActive and 9e9 or defaultFog
+    Lighting.Brightness = noFogActive and 2 or 1
+end)
     end
 end)
