@@ -1,4 +1,4 @@
--- Shark Hub V3.4 | Fixed Renamer & Updated Priorities
+-- Shark Hub V3.5 | Fixed UI Click Register & Feature Loops
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -19,9 +19,8 @@ local EXPAND_HITBOX_ENABLED = false
 local SPEED_BOOST_ENABLED = false
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, bringLoop, godConnection = nil, nil, nil
+local rakeLoop, bringLoop, godConnection, hitboxLoop = nil, nil, nil, nil
 
--- Updated Weapon Priority (Ruinstrikers First)
 local WEAPON_PRIORITY = {
     "Ruinstrikers",
     "TormentumAxe",
@@ -30,7 +29,7 @@ local WEAPON_PRIORITY = {
 }
 
 --------------------------------------------------------------------------------
--- TARGET & TOOL SCANNER
+-- TARGET SCANNER
 --------------------------------------------------------------------------------
 local function findTargetModel(query)
     for _, obj in ipairs(Workspace:GetDescendants()) do
@@ -112,7 +111,7 @@ MainFrame.Position = UDim2.new(0.5, -180, 0.25, -250)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 18, 26)
 MainFrame.BackgroundTransparency = 0.05
 MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
+MainFrame.Active = false
 MainFrame.Parent = ScreenGui
 
 local FrameCorner = Instance.new("UICorner")
@@ -217,6 +216,7 @@ ScrollingFrame.BorderSizePixel = 0
 ScrollingFrame.ScrollBarThickness = 4
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 240)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 720)
+ScrollingFrame.Active = true
 ScrollingFrame.Parent = MainFrame
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -235,7 +235,8 @@ local function CreateButton(text, order, initialActive)
     btn.Font = Enum.Font.GothamSemibold
     btn.TextSize = 12
     btn.LayoutOrder = order
-    btn.AutoButtonColor = false
+    btn.AutoButtonColor = true
+    btn.Active = true
     btn.Parent = ScrollingFrame
     
     local corner = Instance.new("UICorner")
@@ -296,6 +297,7 @@ local function CreateInputPair(placeholder, defaultText, buttonText, order)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 11
+    btn.Active = true
     btn.Parent = container
 
     local bCorner = Instance.new("UICorner")
@@ -363,9 +365,6 @@ AutoRakeBtn.MouseButton1Click:Connect(function()
     end
 end)
 
---------------------------------------------------------------------------------
--- FIXED ITEM RENAMER
---------------------------------------------------------------------------------
 RenameToolBtn.MouseButton1Click:Connect(function()
     local oldName = ToolOldBox.Text:lower()
     local newName = ToolNewBox.Text
@@ -402,38 +401,64 @@ RenameToolBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- LOCATION TELEPORTS & UTILITIES
+-- LOCATION TELEPORTS
 --------------------------------------------------------------------------------
-local function teleportToLocation(targetName)
+local function teleportToLocation(query)
     local character = LocalPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
     
+    query = query:lower()
     for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj.Name == targetName or obj.Name == (targetName == "CaveA" and "Cave1" or "Cave2") then
+        local name = obj.Name:lower()
+        if string.find(name, query) or (query == "cavea" and string.find(name, "cave1")) or (query == "caveb" and string.find(name, "cave2")) then
             local targetPart = obj:IsA("BasePart") and obj or (obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")))
             if targetPart then
                 character.HumanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-                return
+                return true
             end
         end
     end
+    return false
 end
 
-CaveABtn.MouseButton1Click:Connect(function() teleportToLocation("CaveA") end)
-CaveBBtn.MouseButton1Click:Connect(function() teleportToLocation("CaveB") end)
+CaveABtn.MouseButton1Click:Connect(function() 
+    if teleportToLocation("cavea") then
+        CaveABtn.Text = "✅ Teleported to Cave A!"
+    else
+        CaveABtn.Text = "❌ Cave A Not Found!"
+    end
+    task.delay(2, function() CaveABtn.Text = "⛰️ Teleport to Cave A" end)
+end)
+
+CaveBBtn.MouseButton1Click:Connect(function() 
+    if teleportToLocation("caveb") then
+        CaveBBtn.Text = "✅ Teleported to Cave B!"
+    else
+        CaveBBtn.Text = "❌ Cave B Not Found!"
+    end
+    task.delay(2, function() CaveBBtn.Text = "⛰️ Teleport to Cave B" end)
+end)
 
 SafezoneBtn.MouseButton1Click:Connect(function()
     local character = LocalPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") then return end
     
+    local found = false
     for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("SpawnLocation") then
+        if obj:IsA("SpawnLocation") or string.find(obj.Name:lower(), "safezone") then
             character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3.5, 0)
+            found = true
             break
         end
     end
+    
+    SafezoneBtn.Text = found and "✅ Teleported to Safezone!" or "❌ Safezone Not Found!"
+    task.delay(2, function() SafezoneBtn.Text = "🛡️ Teleport to Safezone" end)
 end)
 
+--------------------------------------------------------------------------------
+-- TOGGLES
+--------------------------------------------------------------------------------
 GodModeBtn.MouseButton1Click:Connect(function()
     GODMODE_ENABLED = not GODMODE_ENABLED
     GodModeBtn.Text = GODMODE_ENABLED and "🛡️ God Mode: ON" or "🛡️ God Mode: OFF"
@@ -476,11 +501,17 @@ HitboxBtn.MouseButton1Click:Connect(function()
     HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand Hitbox: ON" or "📦 Expand Hitbox: OFF"
     HitboxBtn.BackgroundColor3 = EXPAND_HITBOX_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
     
-    local _, targetPart = findTargetModel(TARGET_NAME)
-    if EXPAND_HITBOX_ENABLED and targetPart then
-        targetPart.Size = Vector3.new(20, 20, 20)
-        targetPart.Transparency = 0.7
-        targetPart.CanCollide = false
+    if EXPAND_HITBOX_ENABLED then
+        hitboxLoop = RunService.Heartbeat:Connect(function()
+            local _, targetPart = findTargetModel(TARGET_NAME)
+            if targetPart then
+                targetPart.Size = Vector3.new(20, 20, 20)
+                targetPart.Transparency = 0.7
+                targetPart.CanCollide = false
+            end
+        end)
+    else
+        if hitboxLoop then hitboxLoop:Disconnect() hitboxLoop = nil end
     end
 end)
 
