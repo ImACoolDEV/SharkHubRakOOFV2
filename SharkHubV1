@@ -1,17 +1,16 @@
--- Shark Hub V3.1 | Advanced Cyber-Shark Utility Engine
+-- Shark Hub V3.4 | Fixed Renamer & Updated Priorities
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Configuration Variables
-local TARGET_NAME = "rakoof"
+local TARGET_NAME = "DOOFmmy"
 local RAKE_NAME = "the_rake"
 local AUTO_RAKE_ENABLED = false
 local GODMODE_ENABLED = false
@@ -22,17 +21,38 @@ local TOGGLE_KEY = Enum.KeyCode.RightControl
 
 local rakeLoop, bringLoop, godConnection = nil, nil, nil
 
--- Weapon Priority List
+-- Updated Weapon Priority (Ruinstrikers First)
 local WEAPON_PRIORITY = {
+    "Ruinstrikers",
     "TormentumAxe",
     "Murasama",
-    "Ruinstrikers",
     "StunStick"
 }
 
 --------------------------------------------------------------------------------
--- HELPER FUNCTIONS
+-- TARGET & TOOL SCANNER
 --------------------------------------------------------------------------------
+local function findTargetModel(query)
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            local nameLower = string.lower(obj.Name)
+            if string.find(nameLower, string.lower(query)) then
+                local targetPart = obj:FindFirstChild("Torso")
+                    or obj:FindFirstChild("HumanoidRootPart")
+                    or obj:FindFirstChild("UpperTorso")
+                    or obj:FindFirstChild("LowerTorso")
+                    or obj.PrimaryPart
+                    or obj:FindFirstChildWhichIsA("BasePart")
+
+                if targetPart then
+                    return obj, targetPart
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
 local function getBestWeapon()
     local character = LocalPlayer.Character
     local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -67,25 +87,6 @@ local function equipAndAttack()
     end
 end
 
-local function findTargetModel(query)
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
-            local nameLower = string.lower(obj.Name)
-            if string.find(nameLower, string.lower(query)) then
-                local targetPart = obj:FindFirstChild("HumanoidRootPart") 
-                    or obj:FindFirstChild("Torso") 
-                    or obj:FindFirstChild("UpperTorso") 
-                    or obj.PrimaryPart
-                
-                if targetPart then
-                    return obj, targetPart
-                end
-            end
-        end
-    end
-    return nil, nil
-end
-
 local function noclipCharacter()
     local character = LocalPlayer.Character
     if character then
@@ -98,7 +99,7 @@ local function noclipCharacter()
 end
 
 --------------------------------------------------------------------------------
--- 1. FANCY SHARK GUI BUILDER
+-- GUI BUILDER
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SharkHubV3"
@@ -176,14 +177,13 @@ local SubTitle = Instance.new("TextLabel")
 SubTitle.Size = UDim2.new(1, 0, 0, 15)
 SubTitle.Position = UDim2.new(0, 14, 0, 30)
 SubTitle.BackgroundTransparency = 1
-SubTitle.Text = "Apex Utility Engine • [RightCtrl]"
+SubTitle.Text = "Target: DOOFmmy • [RightCtrl]"
 SubTitle.TextColor3 = Color3.fromRGB(0, 180, 220)
 SubTitle.TextXAlignment = Enum.TextXAlignment.Left
 SubTitle.Font = Enum.Font.GothamMedium
 SubTitle.TextSize = 10
 SubTitle.Parent = TitleBar
 
--- Dragging Logic
 local dragging, dragInput, dragStart, startPos
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -225,9 +225,6 @@ UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = ScrollingFrame
 
---------------------------------------------------------------------------------
--- 2. BUTTON & INPUT BUILDERS
---------------------------------------------------------------------------------
 local function CreateButton(text, order, initialActive)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0.96, 0, 0, 38)
@@ -309,46 +306,55 @@ local function CreateInputPair(placeholder, defaultText, buttonText, order)
 end
 
 --------------------------------------------------------------------------------
--- 3. INTERFACE ELEMENTS
+-- BUTTON CONTROLS
 --------------------------------------------------------------------------------
-local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE (Auto Weapon/Atk): OFF", 1, false)
-local TPRakoofBtn, _ = CreateButton("🎯 Teleport To Rakoof (Only TP)", 2, false)
+local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
+local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 2, false)
 local ToolOldBox, ToolNewBox, RenameToolBtn = CreateInputPair("Tool Old Name", "StunStick", "Rename Tool", 3)
 local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 4, false)
 local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 5, false)
 local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 6, false)
 local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 7, false)
-local BringBtn, BringStroke = CreateButton("🧲 Bring RakOOF: OFF", 8, false)
-local HitboxBtn, HitboxStroke = CreateButton("📦 Expand RakOOF Hitbox: OFF", 9, false)
+local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 8, false)
+local HitboxBtn, HitboxStroke = CreateButton("📦 Expand DOOFmmy Hitbox: OFF", 9, false)
 local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 10, false)
 local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 11, false)
 
---------------------------------------------------------------------------------
--- 4. TOGGLE KEYBIND
---------------------------------------------------------------------------------
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == TOGGLE_KEY then
         ScreenGui.Enabled = not ScreenGui.Enabled
     end
 end)
 
---------------------------------------------------------------------------------
--- 5. AUTO FARM THE_RAKE (SAFE HEAD TELEPORT + AUTO WEAPON/ATTACK)
---------------------------------------------------------------------------------
+TPRakoofBtn.MouseButton1Click:Connect(function()
+    local _, targetPart = findTargetModel(TARGET_NAME)
+    local character = LocalPlayer.Character
+    if targetPart and character and character:FindFirstChild("HumanoidRootPart") then
+        noclipCharacter()
+        character.HumanoidRootPart.CFrame = targetPart.CFrame * CFrame.new(0, 0, 3.5)
+        TPRakoofBtn.Text = "✅ Teleported to DOOFmmy!"
+    else
+        TPRakoofBtn.Text = "❌ DOOFmmy Not Found!"
+    end
+
+    task.delay(2, function()
+        TPRakoofBtn.Text = "🎯 Teleport To DOOFmmy"
+    end)
+end)
+
 AutoRakeBtn.MouseButton1Click:Connect(function()
     AUTO_RAKE_ENABLED = not AUTO_RAKE_ENABLED
-    AutoRakeBtn.Text = AUTO_RAKE_ENABLED and "🌾 Auto Farm THE_RAKE: ON" or "🌾 Auto Farm THE_RAKE (Auto Weapon/Atk): OFF"
+    AutoRakeBtn.Text = AUTO_RAKE_ENABLED and "🌾 Auto Farm THE_RAKE: ON" or "🌾 Auto Farm THE_RAKE: OFF"
     AutoRakeBtn.BackgroundColor3 = AUTO_RAKE_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
     AutoRakeStroke.Color = AUTO_RAKE_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
 
     if AUTO_RAKE_ENABLED then
         rakeLoop = RunService.Heartbeat:Connect(function()
-            local _, rakeRoot = findTargetModel(RAKE_NAME)
+            local _, rakePart = findTargetModel(RAKE_NAME)
             local character = LocalPlayer.Character
-            if rakeRoot and character and character:FindFirstChild("HumanoidRootPart") then
+            if rakePart and character and character:FindFirstChild("HumanoidRootPart") then
                 noclipCharacter()
-                -- Positions character safely 12 studs above head
-                character.HumanoidRootPart.CFrame = rakeRoot.CFrame * CFrame.new(0, 12, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                character.HumanoidRootPart.CFrame = rakePart.CFrame * CFrame.new(0, 12, 0) * CFrame.Angles(math.rad(-90), 0, 0)
                 equipAndAttack()
             end
         end)
@@ -358,48 +364,30 @@ AutoRakeBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- 6. PURE TELEPORT TO RAKOOF (NO AUTO EQUIP / NO AUTO ATTACK)
---------------------------------------------------------------------------------
-TPRakoofBtn.MouseButton1Click:Connect(function()
-    local _, bossRoot = findTargetModel(TARGET_NAME)
-    local character = LocalPlayer.Character
-    if bossRoot and character and character:FindFirstChild("HumanoidRootPart") then
-        noclipCharacter()
-        character.HumanoidRootPart.CFrame = bossRoot.CFrame * CFrame.new(0, 0, 3.5)
-        TPRakoofBtn.Text = "✅ Teleported to Rakoof!"
-    else
-        TPRakoofBtn.Text = "❌ Rakoof Not Found!"
-    end
-
-    task.delay(2, function()
-        TPRakoofBtn.Text = "🎯 Teleport To Rakoof (Only TP)"
-    end)
-end)
-
---------------------------------------------------------------------------------
--- 7. TOOL RENAMER SYSTEM
+-- FIXED ITEM RENAMER
 --------------------------------------------------------------------------------
 RenameToolBtn.MouseButton1Click:Connect(function()
-    local oldName = ToolOldBox.Text
+    local oldName = ToolOldBox.Text:lower()
     local newName = ToolNewBox.Text
-    
     if oldName == "" or newName == "" then return end
 
     local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
     local character = LocalPlayer.Character
     local renamedCount = 0
 
-    local searchContainers = {backpack, character, Workspace}
-
-    for _, container in ipairs(searchContainers) do
-        if container then
-            for _, item in ipairs(container:GetDescendants()) do
-                if item:IsA("Tool") and item.Name:lower() == oldName:lower() then
-                    item.Name = newName
-                    renamedCount = renamedCount + 1
-                end
-            end
+    local function renameItem(tool)
+        if tool:IsA("Tool") and string.find(tool.Name:lower(), oldName) then
+            tool.Name = newName
+            tool.ToolTip = newName
+            renamedCount = renamedCount + 1
         end
+    end
+
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do renameItem(tool) end
+    end
+    if character then
+        for _, tool in ipairs(character:GetChildren()) do renameItem(tool) end
     end
 
     if renamedCount > 0 then
@@ -414,7 +402,7 @@ RenameToolBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- 8. LOCATION TELEPORTS
+-- LOCATION TELEPORTS & UTILITIES
 --------------------------------------------------------------------------------
 local function teleportToLocation(targetName)
     local character = LocalPlayer.Character
@@ -446,9 +434,6 @@ SafezoneBtn.MouseButton1Click:Connect(function()
     end
 end)
 
---------------------------------------------------------------------------------
--- 9. EXTRA UTILITIES
---------------------------------------------------------------------------------
 GodModeBtn.MouseButton1Click:Connect(function()
     GODMODE_ENABLED = not GODMODE_ENABLED
     GodModeBtn.Text = GODMODE_ENABLED and "🛡️ God Mode: ON" or "🛡️ God Mode: OFF"
@@ -470,15 +455,15 @@ end)
 
 BringBtn.MouseButton1Click:Connect(function()
     BRING_BOSS_ENABLED = not BRING_BOSS_ENABLED
-    BringBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring RakOOF: ON" or "🧲 Bring RakOOF: OFF"
+    BringBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring DOOFmmy: ON" or "🧲 Bring DOOFmmy: OFF"
     BringBtn.BackgroundColor3 = BRING_BOSS_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
     
     if BRING_BOSS_ENABLED then
         bringLoop = RunService.Heartbeat:Connect(function()
-            local _, bossRoot = findTargetModel(TARGET_NAME)
+            local _, targetPart = findTargetModel(TARGET_NAME)
             local character = LocalPlayer.Character
-            if bossRoot and character and character:FindFirstChild("HumanoidRootPart") then
-                bossRoot.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3.5)
+            if targetPart and character and character:FindFirstChild("HumanoidRootPart") then
+                targetPart.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3.5)
             end
         end)
     else
@@ -488,14 +473,14 @@ end)
 
 HitboxBtn.MouseButton1Click:Connect(function()
     EXPAND_HITBOX_ENABLED = not EXPAND_HITBOX_ENABLED
-    HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand RakOOF Hitbox: ON" or "📦 Expand RakOOF Hitbox: OFF"
+    HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand Hitbox: ON" or "📦 Expand Hitbox: OFF"
     HitboxBtn.BackgroundColor3 = EXPAND_HITBOX_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
     
-    local _, bossRoot = findTargetModel(TARGET_NAME)
-    if EXPAND_HITBOX_ENABLED and bossRoot then
-        bossRoot.Size = Vector3.new(20, 20, 20)
-        bossRoot.Transparency = 0.7
-        bossRoot.CanCollide = false
+    local _, targetPart = findTargetModel(TARGET_NAME)
+    if EXPAND_HITBOX_ENABLED and targetPart then
+        targetPart.Size = Vector3.new(20, 20, 20)
+        targetPart.Transparency = 0.7
+        targetPart.CanCollide = false
     end
 end)
 
