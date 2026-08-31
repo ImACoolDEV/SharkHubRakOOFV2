@@ -1,10 +1,11 @@
--- Shark Hub V3.5 | Fixed UI Click Register & Feature Loops
+-- Shark Hub V3.8 | Anti-Fling Auto Farm Fix
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -19,7 +20,7 @@ local EXPAND_HITBOX_ENABLED = false
 local SPEED_BOOST_ENABLED = false
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, bringLoop, godConnection, hitboxLoop = nil, nil, nil, nil
+local rakeLoop, bringLoop, godConnection, hitboxLoop, noclipConnection = nil, nil, nil, nil, nil
 
 local WEAPON_PRIORITY = {
     "Ruinstrikers",
@@ -29,7 +30,7 @@ local WEAPON_PRIORITY = {
 }
 
 --------------------------------------------------------------------------------
--- TARGET SCANNER
+-- TARGET SCANNER & ATTACK LOGIC
 --------------------------------------------------------------------------------
 local function findTargetModel(query)
     for _, obj in ipairs(Workspace:GetDescendants()) do
@@ -68,11 +69,10 @@ local function getBestWeapon()
     for _, tool in ipairs(backpack:GetChildren()) do
         if tool:IsA("Tool") then return tool end
     end
-
     return nil
 end
 
-local function equipAndAttack()
+local function attackTarget(targetPart)
     local character = LocalPlayer.Character
     if not character then return end
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -82,18 +82,31 @@ local function equipAndAttack()
         if bestTool.Parent ~= character then
             humanoid:EquipTool(bestTool)
         end
+        
         bestTool:Activate()
+        VirtualUser:Button1Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+        VirtualUser:Button1Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
     end
 end
 
-local function noclipCharacter()
-    local character = LocalPlayer.Character
-    if character then
-        for _, part in ipairs(character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+local function enableContinuousNoclip()
+    if noclipConnection then return end
+    noclipConnection = RunService.Stepped:Connect(function()
+        local character = LocalPlayer.Character
+        if character then
+            for _, part in ipairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
             end
         end
+    end)
+end
+
+local function disableContinuousNoclip()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
     end
 end
 
@@ -261,37 +274,42 @@ local function CreateButton(text, order, initialActive)
     return btn, stroke
 end
 
-local function CreateInputPair(placeholder, defaultText, buttonText, order)
+local function CreateDoubleInput(placeholder1, default1, placeholder2, default2, buttonText, order)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(0.96, 0, 0, 42)
     container.BackgroundTransparency = 1
     container.LayoutOrder = order
     container.Parent = ScrollingFrame
 
-    local textBox = Instance.new("TextBox")
-    textBox.Size = UDim2.new(0.55, -4, 1, 0)
-    textBox.Position = UDim2.new(0, 0, 0, 0)
-    textBox.BackgroundColor3 = Color3.fromRGB(15, 28, 42)
-    textBox.Text = defaultText
-    textBox.PlaceholderText = placeholder
-    textBox.TextColor3 = Color3.fromRGB(220, 245, 255)
-    textBox.Font = Enum.Font.GothamMedium
-    textBox.TextSize = 11
-    textBox.Parent = container
+    local box1 = Instance.new("TextBox")
+    box1.Size = UDim2.new(0.32, -2, 1, 0)
+    box1.Position = UDim2.new(0, 0, 0, 0)
+    box1.BackgroundColor3 = Color3.fromRGB(15, 28, 42)
+    box1.Text = default1
+    box1.PlaceholderText = placeholder1
+    box1.TextColor3 = Color3.fromRGB(220, 245, 255)
+    box1.Font = Enum.Font.GothamMedium
+    box1.TextSize = 10
+    box1.Parent = container
+    Instance.new("UICorner", box1).CornerRadius = UDim.new(0, 8)
+    local s1 = Instance.new("UIStroke", box1) s1.Thickness=1 s1.Color=Color3.fromRGB(0, 160, 210) s1.Transparency=0.5
 
-    local tCorner = Instance.new("UICorner")
-    tCorner.CornerRadius = UDim.new(0, 8)
-    tCorner.Parent = textBox
-
-    local tStroke = Instance.new("UIStroke")
-    tStroke.Thickness = 1
-    tStroke.Color = Color3.fromRGB(0, 160, 210)
-    tStroke.Transparency = 0.5
-    tStroke.Parent = textBox
+    local box2 = Instance.new("TextBox")
+    box2.Size = UDim2.new(0.32, -2, 1, 0)
+    box2.Position = UDim2.new(0.32, 2, 0, 0)
+    box2.BackgroundColor3 = Color3.fromRGB(15, 28, 42)
+    box2.Text = default2
+    box2.PlaceholderText = placeholder2
+    box2.TextColor3 = Color3.fromRGB(220, 245, 255)
+    box2.Font = Enum.Font.GothamMedium
+    box2.TextSize = 10
+    box2.Parent = container
+    Instance.new("UICorner", box2).CornerRadius = UDim.new(0, 8)
+    local s2 = Instance.new("UIStroke", box2) s2.Thickness=1 s2.Color=Color3.fromRGB(0, 160, 210) s2.Transparency=0.5
 
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.45, -4, 1, 0)
-    btn.Position = UDim2.new(0.55, 4, 0, 0)
+    btn.Size = UDim2.new(0.36, -4, 1, 0)
+    btn.Position = UDim2.new(0.64, 4, 0, 0)
     btn.BackgroundColor3 = Color3.fromRGB(0, 110, 160)
     btn.Text = buttonText
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -299,12 +317,9 @@ local function CreateInputPair(placeholder, defaultText, buttonText, order)
     btn.TextSize = 11
     btn.Active = true
     btn.Parent = container
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
-    local bCorner = Instance.new("UICorner")
-    bCorner.CornerRadius = UDim.new(0, 8)
-    bCorner.Parent = btn
-
-    return textBox, btn
+    return box1, box2, btn
 end
 
 --------------------------------------------------------------------------------
@@ -312,7 +327,7 @@ end
 --------------------------------------------------------------------------------
 local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
 local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 2, false)
-local ToolOldBox, ToolNewBox, RenameToolBtn = CreateInputPair("Tool Old Name", "StunStick", "Rename Tool", 3)
+local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old Name", "StunStick", "New Name", "Ruinstrikers", "Rename", 3)
 local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 4, false)
 local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 5, false)
 local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 6, false)
@@ -332,7 +347,6 @@ TPRakoofBtn.MouseButton1Click:Connect(function()
     local _, targetPart = findTargetModel(TARGET_NAME)
     local character = LocalPlayer.Character
     if targetPart and character and character:FindFirstChild("HumanoidRootPart") then
-        noclipCharacter()
         character.HumanoidRootPart.CFrame = targetPart.CFrame * CFrame.new(0, 0, 3.5)
         TPRakoofBtn.Text = "✅ Teleported to DOOFmmy!"
     else
@@ -351,17 +365,35 @@ AutoRakeBtn.MouseButton1Click:Connect(function()
     AutoRakeStroke.Color = AUTO_RAKE_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
 
     if AUTO_RAKE_ENABLED then
+        enableContinuousNoclip()
         rakeLoop = RunService.Heartbeat:Connect(function()
             local _, rakePart = findTargetModel(RAKE_NAME)
             local character = LocalPlayer.Character
             if rakePart and character and character:FindFirstChild("HumanoidRootPart") then
-                noclipCharacter()
-                character.HumanoidRootPart.CFrame = rakePart.CFrame * CFrame.new(0, 12, 0) * CFrame.Angles(math.rad(-90), 0, 0)
-                equipAndAttack()
+                local targetCFrame = CFrame.new(rakePart.Position + Vector3.new(0, 2, 0), rakePart.Position)
+                character.HumanoidRootPart.CFrame = targetCFrame
+                
+                rakePart.Size = Vector3.new(12, 12, 12)
+                rakePart.CanCollide = false
+                
+                attackTarget(rakePart)
             end
         end)
     else
+        -- Anti-Fling logic starts here
         if rakeLoop then rakeLoop:Disconnect() rakeLoop = nil end
+        
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            -- Pop the player 20 studs straight up so they don't spawn inside map geometry/The Rake
+            character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame + Vector3.new(0, 20, 0)
+            -- Kill all built up momentum/velocity before reenabling collisions
+            character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        end
+        
+        -- Finally disable noclip safely
+        disableContinuousNoclip()
     end
 end)
 
@@ -396,7 +428,7 @@ RenameToolBtn.MouseButton1Click:Connect(function()
     end
 
     task.delay(2, function()
-        RenameToolBtn.Text = "Rename Tool"
+        RenameToolBtn.Text = "Rename"
     end)
 end)
 
