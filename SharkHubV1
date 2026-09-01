@@ -1,4 +1,5 @@
 -- Shark Hub V3.8 | Anti-Fling Auto Farm Fix
+-- Shark Hub V3.10 | Auto Farm + Hotbar Slot 1 Auto Attack
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -6,6 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -14,13 +16,14 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local TARGET_NAME = "DOOFmmy"
 local RAKE_NAME = "the_rake"
 local AUTO_RAKE_ENABLED = false
+local AUTO_ATTACK_ENABLED = false
 local GODMODE_ENABLED = false
 local BRING_BOSS_ENABLED = false
 local EXPAND_HITBOX_ENABLED = false
 local SPEED_BOOST_ENABLED = false
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, bringLoop, godConnection, hitboxLoop, noclipConnection = nil, nil, nil, nil, nil
+local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection = nil, nil, nil, nil, nil, nil
 
 local WEAPON_PRIORITY = {
     "Ruinstrikers",
@@ -72,7 +75,7 @@ local function getBestWeapon()
     return nil
 end
 
-local function attackTarget(targetPart)
+local function executeFarmAttack()
     local character = LocalPlayer.Character
     if not character then return end
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -87,6 +90,25 @@ local function attackTarget(targetPart)
         VirtualUser:Button1Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
         VirtualUser:Button1Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
     end
+end
+
+-- Simulates pressing the '1' key to use whatever is in hotbar slot 1, then clicks
+local function executeHotbarSlot1Attack()
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    -- Press hotbar key '1' to equip the item in slot 1
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+    
+    -- Use the tool
+    local equippedTool = character:FindFirstChildOfClass("Tool")
+    if equippedTool then
+        equippedTool:Activate()
+    end
+    
+    VirtualUser:Button1Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+    VirtualUser:Button1Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
 end
 
 local function enableContinuousNoclip()
@@ -119,7 +141,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 360, 0, 680)
+MainFrame.Size = UDim2.new(0, 360, 0, 720)
 MainFrame.Position = UDim2.new(0.5, -180, 0.25, -250)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 18, 26)
 MainFrame.BackgroundTransparency = 0.05
@@ -228,7 +250,7 @@ ScrollingFrame.BackgroundTransparency = 1
 ScrollingFrame.BorderSizePixel = 0
 ScrollingFrame.ScrollBarThickness = 4
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 240)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 720)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 780)
 ScrollingFrame.Active = true
 ScrollingFrame.Parent = MainFrame
 
@@ -326,16 +348,17 @@ end
 -- BUTTON CONTROLS
 --------------------------------------------------------------------------------
 local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
-local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 2, false)
-local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old Name", "StunStick", "New Name", "Ruinstrikers", "Rename", 3)
-local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 4, false)
-local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 5, false)
-local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 6, false)
-local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 7, false)
-local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 8, false)
-local HitboxBtn, HitboxStroke = CreateButton("📦 Expand DOOFmmy Hitbox: OFF", 9, false)
-local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 10, false)
-local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 11, false)
+local AutoAttackBtn, AutoAttackStroke = CreateButton("⚔️ Auto Attack (Slot 1): OFF", 2, false)
+local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 3, false)
+local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old Name", "StunStick", "New Name", "Ruinstrikers", "Rename", 4)
+local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 5, false)
+local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 6, false)
+local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 7, false)
+local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 8, false)
+local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 9, false)
+local HitboxBtn, HitboxStroke = CreateButton("📦 Expand DOOFmmy Hitbox: OFF", 10, false)
+local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 11, false)
+local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 12, false)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == TOGGLE_KEY then
@@ -376,24 +399,34 @@ AutoRakeBtn.MouseButton1Click:Connect(function()
                 rakePart.Size = Vector3.new(12, 12, 12)
                 rakePart.CanCollide = false
                 
-                attackTarget(rakePart)
+                executeFarmAttack()
             end
         end)
     else
-        -- Anti-Fling logic starts here
         if rakeLoop then rakeLoop:Disconnect() rakeLoop = nil end
         
         local character = LocalPlayer.Character
         if character and character:FindFirstChild("HumanoidRootPart") then
-            -- Pop the player 20 studs straight up so they don't spawn inside map geometry/The Rake
             character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame + Vector3.new(0, 20, 0)
-            -- Kill all built up momentum/velocity before reenabling collisions
             character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
         end
-        
-        -- Finally disable noclip safely
         disableContinuousNoclip()
+    end
+end)
+
+AutoAttackBtn.MouseButton1Click:Connect(function()
+    AUTO_ATTACK_ENABLED = not AUTO_ATTACK_ENABLED
+    AutoAttackBtn.Text = AUTO_ATTACK_ENABLED and "⚔️ Auto Attack (Slot 1): ON" or "⚔️ Auto Attack (Slot 1): OFF"
+    AutoAttackBtn.BackgroundColor3 = AUTO_ATTACK_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
+    AutoAttackStroke.Color = AUTO_ATTACK_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
+
+    if AUTO_ATTACK_ENABLED then
+        attackLoop = RunService.Heartbeat:Connect(function()
+            executeHotbarSlot1Attack()
+        end)
+    else
+        if attackLoop then attackLoop:Disconnect() attackLoop = nil end
     end
 end)
 
