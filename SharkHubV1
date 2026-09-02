@@ -1,11 +1,11 @@
--- Shark Hub V3.8 | Anti-Fling Auto Farm Fix
--- Shark Hub V3.10 | Auto Farm + Hotbar Slot 1 Auto Attack
+-- Shark Hub V3.12 | Auto Pickup (Penguin Parts & Meshes), Triggerbot, Bring Rakoof & Auto Escape
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
@@ -15,15 +15,28 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 -- Configuration Variables
 local TARGET_NAME = "DOOFmmy"
 local RAKE_NAME = "the_rake"
+local DISPLAY_TARGET_NAME = "Rakoof"
+
 local AUTO_RAKE_ENABLED = false
 local AUTO_ATTACK_ENABLED = false
 local GODMODE_ENABLED = false
 local BRING_BOSS_ENABLED = false
 local EXPAND_HITBOX_ENABLED = false
 local SPEED_BOOST_ENABLED = false
+local AUTO_PICKUP_ENABLED = false
+local TRIGGERBOT_ENABLED = false
+local AUTO_ESCAPE_ENABLED = false
+local BRING_RAKOOF_ENABLED = false
+
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection = nil, nil, nil, nil, nil, nil
+local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+
+local TARGET_ITEMS = {
+    "GoldenApple", "LegendaryEnergy", "IgnitionFlame", 
+    "SnowFlakes", "CorruptedHalo", "StrangeBar", "BurnedBone",
+    "Penguin", "PenguinPart", "PenguinParts", "Mesh", "Meshes"
+}
 
 local WEAPON_PRIORITY = {
     "Ruinstrikers",
@@ -97,11 +110,9 @@ local function executeHotbarSlot1Attack()
     local character = LocalPlayer.Character
     if not character then return end
     
-    -- Press hotbar key '1' to equip the item in slot 1
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
     
-    -- Use the tool
     local equippedTool = character:FindFirstChildOfClass("Tool")
     if equippedTool then
         equippedTool:Activate()
@@ -129,6 +140,25 @@ local function disableContinuousNoclip()
     if noclipConnection then
         noclipConnection:Disconnect()
         noclipConnection = nil
+    end
+end
+
+local function teleportToReplicatedRock()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local rock = ReplicatedStorage:FindFirstChild("Rock")
+    if not rock then return end
+
+    if rock:IsA("BasePart") then
+        hrp.CFrame = rock.CFrame + Vector3.new(0, 3, 0)
+    elseif rock:IsA("Model") then
+        local rockPart = rock.PrimaryPart or rock:FindFirstChildOfClass("BasePart")
+        if rockPart then
+            hrp.CFrame = rockPart.CFrame + Vector3.new(0, 3, 0)
+        end
     end
 end
 
@@ -200,7 +230,7 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -120, 1, 0)
 TitleText.Position = UDim2.new(0, 14, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V3"
+TitleText.Text = "🦈 SHARK HUB V3.12"
 TitleText.TextColor3 = Color3.fromRGB(220, 245, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
@@ -250,7 +280,7 @@ ScrollingFrame.BackgroundTransparency = 1
 ScrollingFrame.BorderSizePixel = 0
 ScrollingFrame.ScrollBarThickness = 4
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 240)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 780)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 960)
 ScrollingFrame.Active = true
 ScrollingFrame.Parent = MainFrame
 
@@ -349,16 +379,20 @@ end
 --------------------------------------------------------------------------------
 local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
 local AutoAttackBtn, AutoAttackStroke = CreateButton("⚔️ Auto Attack (Slot 1): OFF", 2, false)
-local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 3, false)
-local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old Name", "StunStick", "New Name", "Ruinstrikers", "Rename", 4)
-local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 5, false)
-local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 6, false)
-local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 7, false)
-local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 8, false)
-local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 9, false)
-local HitboxBtn, HitboxStroke = CreateButton("📦 Expand DOOFmmy Hitbox: OFF", 10, false)
-local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 11, false)
-local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 12, false)
+local TriggerBotBtn, TriggerBotStroke = CreateButton("🎯 Trigger Bot: OFF", 3, false)
+local AutoPickupBtn, AutoPickupStroke = CreateButton("🎁 Auto Pickup Items: OFF", 4, false)
+local AutoEscapeBtn, AutoEscapeStroke = CreateButton("🚨 Auto Escape (20% HP): OFF", 5, false)
+local BringRakoofBtn, BringRakoofStroke = CreateButton("🧲 Bring " .. DISPLAY_TARGET_NAME .. " (Rakoof): OFF", 6, false)
+local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 7, false)
+local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old Name", "StunStick", "New Name", "Ruinstrikers", "Rename", 8)
+local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 9, false)
+local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 10, false)
+local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 11, false)
+local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 12, false)
+local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 13, false)
+local HitboxBtn, HitboxStroke = CreateButton("📦 Expand DOOFmmy Hitbox: OFF", 14, false)
+local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 15, false)
+local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 16, false)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == TOGGLE_KEY then
@@ -427,6 +461,141 @@ AutoAttackBtn.MouseButton1Click:Connect(function()
         end)
     else
         if attackLoop then attackLoop:Disconnect() attackLoop = nil end
+    end
+end)
+
+-- Trigger Bot Feature
+TriggerBotBtn.MouseButton1Click:Connect(function()
+    TRIGGERBOT_ENABLED = not TRIGGERBOT_ENABLED
+    TriggerBotBtn.Text = TRIGGERBOT_ENABLED and "🎯 Trigger Bot: ON" or "🎯 Trigger Bot: OFF"
+    TriggerBotBtn.BackgroundColor3 = TRIGGERBOT_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
+    TriggerBotStroke.Color = TRIGGERBOT_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
+
+    if TRIGGERBOT_ENABLED then
+        triggerBotConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+
+            local _, bossRoot = findTargetModel(RAKE_NAME)
+            if not bossRoot then
+                _, bossRoot = findTargetModel(TARGET_NAME)
+            end
+
+            if bossRoot then
+                local distance = (hrp.Position - bossRoot.Position).Magnitude
+                if distance <= 25 then
+                    executeHotbarSlot1Attack()
+                end
+            end
+        end)
+    else
+        if triggerBotConnection then triggerBotConnection:Disconnect() triggerBotConnection = nil end
+    end
+end)
+
+-- Auto Pickup Feature (Updated with Penguin Parts & Meshes)
+AutoPickupBtn.MouseButton1Click:Connect(function()
+    AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
+    AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Auto Pickup Items: ON" or "🎁 Auto Pickup Items: OFF"
+    AutoPickupBtn.BackgroundColor3 = AUTO_PICKUP_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
+    AutoPickupStroke.Color = AUTO_PICKUP_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
+
+    if AUTO_PICKUP_ENABLED then
+        pickupLoop = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+
+            local dropsFolder = Workspace:FindFirstChild("Drops") or Workspace:FindFirstChild("drops") or Workspace
+            for _, item in ipairs(dropsFolder:GetDescendants()) do
+                if item:IsA("BasePart") or item:IsA("Model") or item:IsA("Tool") then
+                    local nameLower = string.lower(item.Name)
+                    local matchesName = false
+                    
+                    for _, target in ipairs(TARGET_ITEMS) do
+                        if string.find(nameLower, string.lower(target)) then
+                            matchesName = true
+                            break
+                        end
+                    end
+
+                    if matchesName then
+                        local targetPart = nil
+                        if item:IsA("BasePart") then
+                            targetPart = item
+                        else
+                            targetPart = item:FindFirstChild("Handle") or item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                        end
+
+                        if targetPart then
+                            for _, v in ipairs(targetPart:GetChildren()) do
+                                if v:IsA("LinearVelocity") or v:IsA("AngularVelocity") or v:IsA("BodyVelocity") or v:IsA("BodyPosition") then
+                                    v:Destroy()
+                                end
+                            end
+                            targetPart.CanCollide = false
+                            targetPart.Anchored = false
+                            targetPart.AssemblyLinearVelocity = Vector3.zero
+                            targetPart.AssemblyAngularVelocity = Vector3.zero
+                            targetPart.CFrame = hrp.CFrame
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if pickupLoop then pickupLoop:Disconnect() pickupLoop = nil end
+    end
+end)
+
+-- Auto Escape Feature
+AutoEscapeBtn.MouseButton1Click:Connect(function()
+    AUTO_ESCAPE_ENABLED = not AUTO_ESCAPE_ENABLED
+    AutoEscapeBtn.Text = AUTO_ESCAPE_ENABLED and "🚨 Auto Escape (20% HP): ON" or "🚨 Auto Escape (20% HP): OFF"
+    AutoEscapeBtn.BackgroundColor3 = AUTO_ESCAPE_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
+    AutoEscapeStroke.Color = AUTO_ESCAPE_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
+
+    if AUTO_ESCAPE_ENABLED then
+        escapeConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 and hum.MaxHealth > 0 then
+                    local healthPercent = (hum.Health / hum.MaxHealth) * 100
+                    if healthPercent <= 20 then
+                        teleportToReplicatedRock()
+                    end
+                end
+            end
+        end)
+    else
+        if escapeConnection then escapeConnection:Disconnect() escapeConnection = nil end
+    end
+end)
+
+-- Bring Rakoof Feature
+BringRakoofBtn.MouseButton1Click:Connect(function()
+    BRING_RAKOOF_ENABLED = not BRING_RAKOOF_ENABLED
+    BringRakoofBtn.Text = BRING_RAKOOF_ENABLED and "🧲 Bring " .. DISPLAY_TARGET_NAME .. " (Rakoof): ON" or "🧲 Bring " .. DISPLAY_TARGET_NAME .. " (Rakoof): OFF"
+    BringRakoofBtn.BackgroundColor3 = BRING_RAKOOF_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
+    BringRakoofStroke.Color = BRING_RAKOOF_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
+
+    if BRING_RAKOOF_ENABLED then
+        bringRakoofLoop = RunService.Heartbeat:Connect(function()
+            local _, rakePart = findTargetModel(RAKE_NAME)
+            if not rakePart then
+                _, rakePart = findTargetModel(TARGET_NAME)
+            end
+            local character = LocalPlayer.Character
+            if rakePart and character and character:FindFirstChild("HumanoidRootPart") then
+                rakePart.CFrame = character.HumanoidRootPart.CFrame * CFrame.new(0, 1, -8)
+            end
+        end)
+    else
+        if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
     end
 end)
 
