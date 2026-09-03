@@ -1,4 +1,4 @@
--- Shark Hub V3.18 | Glassmorphic Multi-Key Edition (Full Button Restoration - Blue Theme)
+-- Shark Hub V3.19 | Glassmorphic Multi-Key Edition (With Pity System & Luck Boosts)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -46,6 +46,11 @@ local IS_KEYLESS_USER = (LocalPlayer.UserId == 9603761866 or LocalPlayer.Name ==
 local TARGET_NAME = "DOOFmmy"
 local RAKE_NAME = "the_rake"
 
+local RAKE_KILLS = 0
+local PITY_COUNTER = 0
+local TOTAL_RESETS = 0
+local trackedModels = {}
+
 local VALID_KEYS = {
     ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
     ["SHARK-HUB-VIP-2026-KEY99"] = true,
@@ -67,10 +72,17 @@ local BRING_RAKOOF_ENABLED = false
 local FLYING_SHARK_ENABLED = false
 local FORCE_DROP_ENABLED = false
 
+-- Luck Boost States
+local LUCK_250_ENABLED = false
+local LUCK_500_ENABLED = false
+local LUCK_750_ENABLED = false
+local LUCK_1000_ENABLED = false
+
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
 -- Connection Variables
 local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, sharkLoop, forceDropLoop
+local luck250Loop, luck500Loop, luck750Loop, luck1000Loop
 
 local TARGET_ITEMS = {
     "GoldenApple", "LegendaryEnergy", "IgnitionFlame", 
@@ -89,12 +101,22 @@ local function findItemDropRemote()
     for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
             local nameLower = string.lower(obj.Name)
-            if string.find(nameLower, "itemdrop") or string.find(nameLower, "drop") or string.find(nameLower, "loot") then
+            if string.find(nameLower, "itemdrop") or string.find(nameLower, "drop") or string.find(nameLower, "loot") or string.find(nameLower, "luck") then
                 return obj
             end
         end
     end
     return nil
+end
+
+local function applyLuckMultiplier(multiplier)
+    local remote = findItemDropRemote()
+    if remote then
+        pcall(function()
+            remote:FireServer("SetLuck", multiplier)
+            remote:FireServer({Luck = multiplier, Boost = true})
+        end)
+    end
 end
 
 local function findTargetModel(query)
@@ -206,6 +228,128 @@ local FRAME_BG_GRADIENT = ColorSequence.new({
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 38, 75)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 12, 28))
 })
+
+--------------------------------------------------------------------------------
+-- PITY & KILL COUNTER HUD (TOP-RIGHT DISPLAY)
+--------------------------------------------------------------------------------
+local KillHudFrame = Instance.new("Frame")
+KillHudFrame.Size = UDim2.new(0, 240, 0, 95)
+KillHudFrame.Position = UDim2.new(1, -250, 0, 20)
+KillHudFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+KillHudFrame.BorderSizePixel = 0
+KillHudFrame.ZIndex = 50
+KillHudFrame.Parent = ScreenGui
+Instance.new("UICorner", KillHudFrame).CornerRadius = UDim.new(0, 12)
+
+local KillHudStroke = Instance.new("UIStroke", KillHudFrame)
+KillHudStroke.Thickness = 2
+KillHudStroke.Color = Color3.fromRGB(80, 210, 255)
+
+local KillHudGrad = Instance.new("UIGradient")
+KillHudGrad.Color = FRAME_BG_GRADIENT
+KillHudGrad.Rotation = 45
+KillHudGrad.Parent = KillHudFrame
+
+local KillTitleLabel = Instance.new("TextLabel")
+KillTitleLabel.Size = UDim2.new(1, 0, 0, 24)
+KillTitleLabel.Position = UDim2.new(0, 0, 0, 4)
+KillTitleLabel.BackgroundTransparency = 1
+KillTitleLabel.Text = "✨ SHARK PITY TRACKER"
+KillTitleLabel.TextColor3 = Color3.fromRGB(180, 235, 255)
+KillTitleLabel.Font = Enum.Font.GothamBold
+KillTitleLabel.TextSize = 12
+KillTitleLabel.ZIndex = 51
+KillTitleLabel.Parent = KillHudFrame
+
+local KillHudText = Instance.new("TextLabel")
+KillHudText.Size = UDim2.new(1, 0, 0, 18)
+KillHudText.Position = UDim2.new(0, 0, 0, 26)
+KillHudText.BackgroundTransparency = 1
+KillHudText.Text = "🩸 TOTAL KILLS: 0"
+KillHudText.TextColor3 = Color3.fromRGB(0, 220, 255)
+KillHudText.Font = Enum.Font.GothamMedium
+KillHudText.TextSize = 11
+KillHudText.ZIndex = 51
+KillHudText.Parent = KillHudFrame
+
+local PityCounterText = Instance.new("TextLabel")
+PityCounterText.Size = UDim2.new(1, 0, 0, 20)
+PityCounterText.Position = UDim2.new(0, 0, 0, 42)
+PityCounterText.BackgroundTransparency = 1
+PityCounterText.Text = "💎 PITY: 0 / 10"
+PityCounterText.TextColor3 = Color3.fromRGB(255, 215, 0)
+PityCounterText.Font = Enum.Font.GothamBold
+PityCounterText.TextSize = 13
+PityCounterText.ZIndex = 51
+PityCounterText.Parent = KillHudFrame
+
+-- Pity Progress Bar
+local ProgressBarBg = Instance.new("Frame")
+ProgressBarBg.Size = UDim2.new(0.88, 0, 0, 10)
+ProgressBarBg.Position = UDim2.new(0.06, 0, 0, 68)
+ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 20, 40)
+ProgressBarBg.BorderSizePixel = 0
+ProgressBarBg.ZIndex = 51
+ProgressBarBg.Parent = KillHudFrame
+Instance.new("UICorner", ProgressBarBg).CornerRadius = UDim.new(0, 5)
+
+local ProgressBarFill = Instance.new("Frame")
+ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+ProgressBarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ProgressBarFill.BorderSizePixel = 0
+ProgressBarFill.ZIndex = 52
+ProgressBarFill.Parent = ProgressBarBg
+Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(0, 5)
+
+local FillGrad = Instance.new("UIGradient")
+FillGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 180, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 215, 0))
+})
+FillGrad.Parent = ProgressBarFill
+
+local function updateKillCounterUI()
+    KillHudText.Text = "🩸 TOTAL KILLS: " .. tostring(RAKE_KILLS)
+    PityCounterText.Text = "💎 PITY: " .. tostring(PITY_COUNTER) .. " / 10"
+    
+    local fillRatio = math.clamp(PITY_COUNTER / 10, 0, 1)
+    TweenService:Create(ProgressBarFill, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(fillRatio, 0, 1, 0)
+    }):Play()
+end
+
+local function trackModelForKills(model)
+    if not model or not model:IsA("Model") or trackedModels[model] then return end
+    
+    local nameLower = string.lower(model.Name)
+    if string.find(nameLower, string.lower(RAKE_NAME)) or string.find(nameLower, string.lower(TARGET_NAME)) then
+        local hum = model:FindFirstChildOfClass("Humanoid")
+        if hum then
+            trackedModels[model] = true
+            hum.Died:Connect(function()
+                RAKE_KILLS = RAKE_KILLS + 1
+                PITY_COUNTER = PITY_COUNTER + 1
+
+                if PITY_COUNTER >= 10 then
+                    PITY_COUNTER = 0
+                    TOTAL_RESETS = TOTAL_RESETS + 1
+                    
+                    -- Cool flash effect on reset
+                    local FlashTween = TweenService:Create(KillHudStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(255, 215, 0)})
+                    FlashTween:Play()
+                    task.delay(0.4, function()
+                        TweenService:Create(KillHudStroke, TweenInfo.new(0.4), {Color = Color3.fromRGB(80, 210, 255)}):Play()
+                    end)
+                end
+                
+                updateKillCounterUI()
+            end)
+        end
+    end
+end
+
+for _, obj in ipairs(Workspace:GetDescendants()) do trackModelForKills(obj) end
+Workspace.DescendantAdded:Connect(trackModelForKills)
 
 -- Key Authentication Frame
 local KeyFrame = Instance.new("Frame")
@@ -377,6 +521,7 @@ RunService.RenderStepped:Connect(function()
     MainGrad.Rotation = (MainGrad.Rotation + 0.2) % 360
     KeyGrad.Rotation = (KeyGrad.Rotation + 0.2) % 360
     PuzzleFrameGrad.Rotation = (PuzzleFrameGrad.Rotation + 0.2) % 360
+    KillHudGrad.Rotation = (KillHudGrad.Rotation + 0.2) % 360
 end)
 
 local TitleBar = Instance.new("Frame")
@@ -390,7 +535,7 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(0.5, 0, 1, 0)
 TitleText.Position = UDim2.new(0, 18, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V3.18 — BLUE EDITION"
+TitleText.Text = "🦈 SHARK HUB V3.19 — BLUE EDITION"
 TitleText.TextColor3 = Color3.fromRGB(180, 235, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
@@ -515,7 +660,7 @@ SubmitPuzzleBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- FULL BUTTON MATRIX CREATION (ALL ORIGINAL BUTTONS RESTORED)
+-- FULL BUTTON MATRIX CREATION
 --------------------------------------------------------------------------------
 local AutoRakeBtn, AutoRakeStroke, AutoRakeGrad = CreateBlueButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
 local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateBlueButton("⚔️ Auto Attack (Slot 1): OFF", 2, false)
@@ -526,10 +671,17 @@ local SpeedBtn, SpeedStroke, SpeedGrad = CreateBlueButton("⚡ Speed Boost (50 W
 local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateBlueButton("🎯 Trigger Bot: OFF", 7, false)
 local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateBlueButton("🎁 Auto Pickup Items: OFF", 8, false)
 local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateBlueButton("💥 FORCE DROP 1000%: OFF", 9, false)
-local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 10, false)
-local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 11, false)
-local FlyingSharkBtn, FlyingSharkStroke, FlyingSharkGrad = CreateBlueButton("🦈 Flying Shark Companion: OFF", 12, false)
-local TPRakoofBtn, _, TPRakoofGrad = CreateBlueButton("🎯 Teleport To DOOFmmy", 13, false)
+
+-- NEW LUCK BOOST BUTTONS
+local Luck250Btn, Luck250Stroke, Luck250Grad = CreateBlueButton("🍀 250% LUCK BOOST: OFF", 10, false)
+local Luck500Btn, Luck500Stroke, Luck500Grad = CreateBlueButton("🔥 500% LUCK BOOST: OFF", 11, false)
+local Luck750Btn, Luck750Stroke, Luck750Grad = CreateBlueButton("💎 750% LUCK BOOST: OFF", 12, false)
+local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateBlueButton("⚡ 1000% LUCKKYYY: OFF", 13, false)
+
+local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 14, false)
+local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 15, false)
+local FlyingSharkBtn, FlyingSharkStroke, FlyingSharkGrad = CreateBlueButton("🦈 Flying Shark Companion: OFF", 16, false)
+local TPRakoofBtn, _, TPRakoofGrad = CreateBlueButton("🎯 Teleport To DOOFmmy", 17, false)
 
 -- Toggle Menu Key
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -724,6 +876,81 @@ ForceDropBtn.MouseButton1Click:Connect(function()
         end)
     else
         if forceDropLoop then task.cancel(forceDropLoop) forceDropLoop = nil end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- LUCK BOOST TOGGLE LOGIC
+--------------------------------------------------------------------------------
+Luck250Btn.MouseButton1Click:Connect(function()
+    LUCK_250_ENABLED = not LUCK_250_ENABLED
+    Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% LUCK BOOST: ON" or "🍀 250% LUCK BOOST: OFF"
+    Luck250Grad.Color = LUCK_250_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck250Stroke.Color = LUCK_250_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_250_ENABLED then
+        luck250Loop = task.spawn(function()
+            while LUCK_250_ENABLED do
+                applyLuckMultiplier(2.5)
+                task.wait(0.2)
+            end
+        end)
+    else
+        if luck250Loop then task.cancel(luck250Loop) luck250Loop = nil end
+    end
+end)
+
+Luck500Btn.MouseButton1Click:Connect(function()
+    LUCK_500_ENABLED = not LUCK_500_ENABLED
+    Luck500Btn.Text = LUCK_500_ENABLED and "🔥 500% LUCK BOOST: ON" or "🔥 500% LUCK BOOST: OFF"
+    Luck500Grad.Color = LUCK_500_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck500Stroke.Color = LUCK_500_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_500_ENABLED then
+        luck500Loop = task.spawn(function()
+            while LUCK_500_ENABLED do
+                applyLuckMultiplier(5.0)
+                task.wait(0.2)
+            end
+        end)
+    else
+        if luck500Loop then task.cancel(luck500Loop) luck500Loop = nil end
+    end
+end)
+
+Luck750Btn.MouseButton1Click:Connect(function()
+    LUCK_750_ENABLED = not LUCK_750_ENABLED
+    Luck750Btn.Text = LUCK_750_ENABLED and "💎 750% LUCK BOOST: ON" or "💎 750% LUCK BOOST: OFF"
+    Luck750Grad.Color = LUCK_750_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck750Stroke.Color = LUCK_750_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_750_ENABLED then
+        luck750Loop = task.spawn(function()
+            while LUCK_750_ENABLED do
+                applyLuckMultiplier(7.5)
+                task.wait(0.2)
+            end
+        end)
+    else
+        if luck750Loop then task.cancel(luck750Loop) luck750Loop = nil end
+    end
+end)
+
+Luck1000Btn.MouseButton1Click:Connect(function()
+    LUCK_1000_ENABLED = not LUCK_1000_ENABLED
+    Luck1000Btn.Text = LUCK_1000_ENABLED and "⚡ 1000% LUCKKYYY: ON" or "⚡ 1000% LUCKKYYY: OFF"
+    Luck1000Grad.Color = LUCK_1000_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck1000Stroke.Color = LUCK_1000_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_1000_ENABLED then
+        luck1000Loop = task.spawn(function()
+            while LUCK_1000_ENABLED do
+                applyLuckMultiplier(10.0)
+                task.wait(0.1)
+            end
+        end)
+    else
+        if luck1000Loop then task.cancel(luck1000Loop) luck1000Loop = nil end
     end
 end)
 
