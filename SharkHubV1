@@ -1,9 +1,8 @@
--- Shark Hub V3.13 | Key System + Auto Pickup, Triggerbot, Bring Rakoof & Auto Escape
+-- Shark Hub V3.15 | Blackout Edition + Strict Whitelist/Blacklist System
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
@@ -12,11 +11,38 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Check for Banned User ID or Username immediately
+local BANNED_USER_ID = 10536747864
+local BANNED_USERNAME = "ScarymannnnnnnnOK"
+
+if LocalPlayer.UserId == BANNED_USER_ID or LocalPlayer.Name == BANNED_USERNAME then
+    local BanGui = Instance.new("ScreenGui")
+    BanGui.Name = "SharkHubBanned"
+    BanGui.ResetOnSpawn = false
+    BanGui.Parent = PlayerGui
+
+    local BanFrame = Instance.new("Frame")
+    BanFrame.Size = UDim2.new(1, 0, 1, 0)
+    BanFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BanFrame.Parent = BanGui
+
+    local BanText = Instance.new("TextLabel")
+    BanText.Size = UDim2.new(1, 0, 1, 0)
+    BanText.BackgroundTransparency = 1
+    BanText.Text = "UR BANNED FROM TS SCRIPT"
+    BanText.TextColor3 = Color3.fromRGB(255, 0, 0)
+    BanText.Font = Enum.Font.GothamBold
+    BanText.TextSize = 36
+    BanText.Parent = BanFrame
+
+    -- Halt execution entirely for banned users
+    return
+end
+
 -- Configuration Variables
 local TARGET_NAME = "DOOFmmy"
 local RAKE_NAME = "the_rake"
-local DISPLAY_TARGET_NAME = "Rakoof"
-local CORRECT_KEY = "trebtreb2026scripts"
+local CORRECT_KEY = "xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"
 
 local AUTO_RAKE_ENABLED = false
 local AUTO_ATTACK_ENABLED = false
@@ -28,10 +54,11 @@ local AUTO_PICKUP_ENABLED = false
 local TRIGGERBOT_ENABLED = false
 local AUTO_ESCAPE_ENABLED = false
 local BRING_RAKOOF_ENABLED = false
+local FLYING_SHARK_ENABLED = false
 
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, sharkLoop = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
 
 local TARGET_ITEMS = {
     "GoldenApple", "LegendaryEnergy", "IgnitionFlame", 
@@ -163,77 +190,112 @@ local function teleportToReplicatedRock()
 end
 
 --------------------------------------------------------------------------------
--- GUI BUILDER & KEY SYSTEM
+-- BLACKOUT GUI BUILDER & GLOWING KEY SYSTEM
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SharkHubV3"
+ScreenGui.Name = "SharkHubV3_Blackout"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- Key System Frame
+-- Blackout Background Screen (Completely Black)
+local BlackoutBackground = Instance.new("Frame")
+BlackoutBackground.Name = "BlackoutBackground"
+BlackoutBackground.Size = UDim2.new(1, 0, 1, 0)
+BlackoutBackground.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+BlackoutBackground.BorderSizePixel = 0
+BlackoutBackground.ZIndex = 1
+BlackoutBackground.Parent = ScreenGui
+
+-- Key System Frame (Floating / Glowing Fancy GUI)
 local KeyFrame = Instance.new("Frame")
-KeyFrame.Size = UDim2.new(0, 320, 0, 180)
-KeyFrame.Position = UDim2.new(0.5, -160, 0.5, -90)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(10, 18, 26)
-KeyFrame.BackgroundTransparency = 0.05
+KeyFrame.Size = UDim2.new(0, 360, 0, 200)
+KeyFrame.Position = UDim2.new(0.5, -180, 0.5, -100)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(5, 10, 18)
+KeyFrame.BackgroundTransparency = 0.1
 KeyFrame.BorderSizePixel = 0
 KeyFrame.Active = true
+KeyFrame.ZIndex = 2
 KeyFrame.Parent = ScreenGui
 
 local KeyCorner = Instance.new("UICorner")
 KeyCorner.CornerRadius = UDim.new(0, 16)
 KeyCorner.Parent = KeyFrame
 
+-- Fancy Glowing Stroke Effect for Key System
 local KeyStroke = Instance.new("UIStroke")
-KeyStroke.Thickness = 2
-KeyStroke.Color = Color3.fromRGB(0, 210, 255)
-KeyStroke.Transparency = 0.1
+KeyStroke.Thickness = 2.5
+KeyStroke.Color = Color3.fromRGB(0, 240, 255)
+KeyStroke.Transparency = 0
 KeyStroke.Parent = KeyFrame
+
+local KeyGlow = Instance.new("Frame")
+KeyGlow.Size = UDim2.new(1, 14, 1, 14)
+KeyGlow.Position = UDim2.new(0, -7, 0, -7)
+KeyGlow.BackgroundColor3 = Color3.fromRGB(0, 210, 255)
+KeyGlow.BackgroundTransparency = 0.8
+KeyGlow.ZIndex = 1
+KeyGlow.Parent = KeyFrame
+Instance.new("UICorner", KeyGlow).CornerRadius = UDim.new(0, 22)
 
 local KeyTitle = Instance.new("TextLabel")
 KeyTitle.Size = UDim2.new(1, 0, 0, 40)
 KeyTitle.Position = UDim2.new(0, 0, 0, 10)
 KeyTitle.BackgroundTransparency = 1
-KeyTitle.Text = "🦈 SHARK HUB - KEY SYSTEM"
+KeyTitle.Text = "🦈 SHARK HUB - ULTRA SECURE KEY"
 KeyTitle.TextColor3 = Color3.fromRGB(220, 245, 255)
 KeyTitle.Font = Enum.Font.GothamBold
-KeyTitle.TextSize = 14
+KeyTitle.TextSize = 13
+KeyTitle.ZIndex = 3
 KeyTitle.Parent = KeyFrame
 
+local KeySub = Instance.new("TextLabel")
+KeySub.Size = UDim2.new(1, -20, 0, 25)
+KeySub.Position = UDim2.new(0, 10, 0, 45)
+KeySub.BackgroundTransparency = 1
+KeySub.Text = "Encrypted access key required to lift blackout."
+KeySub.TextColor3 = Color3.fromRGB(120, 170, 200)
+KeySub.Font = Enum.Font.GothamMedium
+KeySub.TextSize = 10
+KeySub.ZIndex = 3
+KeySub.Parent = KeyFrame
+
 local KeyBox = Instance.new("TextBox")
-KeyBox.Size = UDim2.new(0.85, 0, 0, 40)
-KeyBox.Position = UDim2.new(0.075, 0, 0, 60)
-KeyBox.BackgroundColor3 = Color3.fromRGB(15, 28, 42)
+KeyBox.Size = UDim2.new(0.88, 0, 0, 38)
+KeyBox.Position = UDim2.new(0.06, 0, 0, 75)
+KeyBox.BackgroundColor3 = Color3.fromRGB(12, 22, 35)
 KeyBox.Text = ""
-KeyBox.PlaceholderText = "Enter Secret Key..."
+KeyBox.PlaceholderText = "Paste complex encryption key..."
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 KeyBox.Font = Enum.Font.GothamMedium
-KeyBox.TextSize = 12
+KeyBox.TextSize = 11
+KeyBox.ZIndex = 3
 KeyBox.Parent = KeyFrame
 Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 8)
-local boxStroke = Instance.new("UIStroke", KeyBox) boxStroke.Thickness = 1 boxStroke.Color = Color3.fromRGB(0, 160, 210) boxStroke.Transparency = 0.4
+local boxStroke = Instance.new("UIStroke", KeyBox) boxStroke.Thickness = 1 boxStroke.Color = Color3.fromRGB(0, 160, 210) boxStroke.Transparency = 0.3
 
 local SubmitBtn = Instance.new("TextButton")
-SubmitBtn.Size = UDim2.new(0.85, 0, 0, 38)
-SubmitBtn.Position = UDim2.new(0.075, 0, 0, 115)
+SubmitBtn.Size = UDim2.new(0.88, 0, 0, 38)
+SubmitBtn.Position = UDim2.new(0.06, 0, 0, 130)
 SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 160)
-SubmitBtn.Text = "Submit Key"
+SubmitBtn.Text = "Authorize Access"
 SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SubmitBtn.Font = Enum.Font.GothamBold
 SubmitBtn.TextSize = 12
 SubmitBtn.Active = true
+SubmitBtn.ZIndex = 3
 SubmitBtn.Parent = KeyFrame
 Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
 
--- Main Hub Frame (Sideways dimensions: Width 720, Height 360)
+-- Main Hub Frame (Hidden behind blackout until key is correct)
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 720, 0, 360)
 MainFrame.Position = UDim2.new(0.5, -360, 0.5, -180)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 18, 26)
 MainFrame.BackgroundTransparency = 0.05
 MainFrame.BorderSizePixel = 0
-MainFrame.Visible = false -- Hidden until correct key is entered
+MainFrame.Visible = false
 MainFrame.Active = false
+MainFrame.ZIndex = 10
 MainFrame.Parent = ScreenGui
 
 local FrameCorner = Instance.new("UICorner")
@@ -245,12 +307,9 @@ GlowFrame.Size = UDim2.new(1, 10, 1, 10)
 GlowFrame.Position = UDim2.new(0, -5, 0, -5)
 GlowFrame.BackgroundColor3 = Color3.fromRGB(0, 210, 255)
 GlowFrame.BackgroundTransparency = 0.85
-GlowFrame.ZIndex = 0
+GlowFrame.ZIndex = 9
 GlowFrame.Parent = MainFrame
-
-local GlowCorner = Instance.new("UICorner")
-GlowCorner.CornerRadius = UDim.new(0, 20)
-GlowCorner.Parent = GlowFrame
+Instance.new("UICorner", GlowFrame).CornerRadius = UDim.new(0, 20)
 
 local UIStroke = Instance.new("UIStroke")
 UIStroke.Thickness = 2
@@ -287,11 +346,11 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -120, 1, 0)
 TitleText.Position = UDim2.new(0, 14, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V3.13 (Sideways)"
+TitleText.Text = "🦈 SHARK HUB V3.15 (Blackout Ultimate)"
 TitleText.TextColor3 = Color3.fromRGB(220, 245, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
-TitleText.TextSize = 15
+TitleText.TextSize = 14
 TitleText.Parent = TitleBar
 
 local SubTitle = Instance.new("TextLabel")
@@ -337,11 +396,10 @@ ScrollingFrame.BackgroundTransparency = 1
 ScrollingFrame.BorderSizePixel = 0
 ScrollingFrame.ScrollBarThickness = 4
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 240)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 520)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 560)
 ScrollingFrame.Active = true
 ScrollingFrame.Parent = MainFrame
 
--- Arrange items in a 2-column grid layout for the sideways interface
 local UIGridLayout = Instance.new("UIGridLayout")
 UIGridLayout.CellSize = UDim2.new(0.48, 0, 0, 38)
 UIGridLayout.CellPadding = UDim2.new(0.04, 0, 0, 8)
@@ -431,44 +489,85 @@ local function CreateDoubleInput(placeholder1, default1, placeholder2, default2,
 end
 
 --------------------------------------------------------------------------------
--- KEY SYSTEM EVENT
+-- KEY SUBMISSION (Lifts Blackout Screen)
 --------------------------------------------------------------------------------
 SubmitBtn.MouseButton1Click:Connect(function()
     if KeyBox.Text == CORRECT_KEY then
         KeyFrame:Destroy()
+        BlackoutBackground:Destroy() -- Removes the black screen
         MainFrame.Visible = true
     else
         KeyBox.Text = ""
-        KeyBox.PlaceholderText = "Wrong Key! Try Again"
+        KeyBox.PlaceholderText = "Invalid Key! Access Denied."
         task.delay(1.5, function()
-            KeyBox.PlaceholderText = "Enter Secret Key..."
+            KeyBox.PlaceholderText = "Paste complex encryption key..."
         end)
     end
 end)
 
 --------------------------------------------------------------------------------
--- BUTTON CONTROLS
+-- BUTTON CONTROLS & FLYING SHARK
 --------------------------------------------------------------------------------
 local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
 local AutoAttackBtn, AutoAttackStroke = CreateButton("⚔️ Auto Attack (Slot 1): OFF", 2, false)
 local TriggerBotBtn, TriggerBotStroke = CreateButton("🎯 Trigger Bot: OFF", 3, false)
 local AutoPickupBtn, AutoPickupStroke = CreateButton("🎁 Auto Pickup Items: OFF", 4, false)
 local AutoEscapeBtn, AutoEscapeStroke = CreateButton("🚨 Auto Escape (20% HP): OFF", 5, false)
-local BringRakoofBtn, BringRakoofStroke = CreateButton("🧲 Bring " .. DISPLAY_TARGET_NAME .. ": OFF", 6, false)
-local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 7, false)
-local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 8, false)
-local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 9, false)
-local HitboxBtn, HitboxStroke = CreateButton("📦 Expand Hitbox: OFF", 10, false)
-local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 11, false)
-local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 12, false)
-local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 13, false)
-local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 14, false)
-local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 15, false)
-local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old", "StunStick", "New", "Ruinstrikers", "Rename", 16)
+local BringRakoofBtn, BringRakoofStroke = CreateButton("🧲 Bring Rakoof: OFF", 6, false)
+local FlyingSharkBtn, FlyingSharkStroke = CreateButton("🦈 Flying Shark Companion: OFF", 7, false)
+local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 8, false)
+local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 9, false)
+local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 10, false)
+local HitboxBtn, HitboxStroke = CreateButton("📦 Expand Hitbox: OFF", 11, false)
+local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 12, false)
+local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 13, false)
+local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 14, false)
+local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 15, false)
+local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 16, false)
+local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old", "StunStick", "New", "Ruinstrikers", "Rename", 17)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == TOGGLE_KEY and MainFrame.Visible then
         MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+-- Flying Shark Companion Implementation
+FlyingSharkBtn.MouseButton1Click:Connect(function()
+    FLYING_SHARK_ENABLED = not FLYING_SHARK_ENABLED
+    FlyingSharkBtn.Text = FLYING_SHARK_ENABLED and "🦈 Flying Shark Companion: ON" or "🦈 Flying Shark Companion: OFF"
+    FlyingSharkBtn.BackgroundColor3 = FLYING_SHARK_ENABLED and Color3.fromRGB(0, 110, 160) or Color3.fromRGB(18, 32, 48)
+    FlyingSharkStroke.Color = FLYING_SHARK_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(30, 60, 90)
+
+    if FLYING_SHARK_ENABLED then
+        local sharkModel = Instance.new("Part")
+        sharkModel.Name = "FlyingSharkCompanion"
+        sharkModel.Size = Vector3.new(4, 2, 6)
+        sharkModel.Shape = Enum.PartType.Cylinder
+        sharkModel.Color = Color3.fromRGB(0, 150, 255)
+        sharkModel.Material = Enum.Material.Neon
+        sharkModel.CanCollide = false
+        sharkModel.Anchored = true
+        sharkModel.Parent = Workspace
+
+        local mesh = Instance.new("SpecialMesh", sharkModel)
+        mesh.MeshType = Enum.MeshType.FileMesh
+        mesh.Scale = Vector3.new(3, 3, 3)
+
+        local angle = 0
+        sharkLoop = RunService.RenderStepped:Connect(function(dt)
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+
+            angle = angle + (dt * 3)
+            local offset = Vector3.new(math.cos(angle) * 6, 4 + math.sin(angle * 2) * 1.5, math.sin(angle) * 6)
+            sharkModel.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+        end)
+    else
+        if sharkLoop then sharkLoop:Disconnect() sharkLoop = nil end
+        local existing = Workspace:FindFirstChild("FlyingSharkCompanion")
+        if existing then existing:Destroy() end
     end
 end)
 
