@@ -1,4 +1,4 @@
--- Shark Hub V3.15 | Blackout Edition + Strict Whitelist/Blacklist System
+-- Shark Hub V3.18 | Blackout Edition + Emerald Gradient Force Luck + Blacklist Handler
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -11,7 +11,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Check for Banned User ID or Username immediately
+-- Check for Banned User ID or Username immediately with custom red gradient warning
 local BANNED_USER_ID = 10536747864
 local BANNED_USERNAME = "ScarymannnnnnnnOK"
 
@@ -23,19 +23,35 @@ if LocalPlayer.UserId == BANNED_USER_ID or LocalPlayer.Name == BANNED_USERNAME t
 
     local BanFrame = Instance.new("Frame")
     BanFrame.Size = UDim2.new(1, 0, 1, 0)
-    BanFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BanFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
     BanFrame.Parent = BanGui
+
+    -- Red gradient for the blacklist screen
+    local BanGrad = Instance.new("UIGradient")
+    BanGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 30, 30)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 0))
+    })
+    BanGrad.Rotation = 45
+    BanGrad.Parent = BanFrame
 
     local BanText = Instance.new("TextLabel")
     BanText.Size = UDim2.new(1, 0, 1, 0)
     BanText.BackgroundTransparency = 1
-    BanText.Text = "UR BANNED FROM TS SCRIPT"
-    BanText.TextColor3 = Color3.fromRGB(255, 0, 0)
+    BanText.Text = "UR BLACK LISTED"
+    BanText.TextColor3 = Color3.fromRGB(255, 240, 240)
     BanText.Font = Enum.Font.GothamBold
-    BanText.TextSize = 36
+    BanText.TextSize = 42
     BanText.Parent = BanFrame
 
-    -- Halt execution entirely for banned users
+    -- Fancy glow stroke for the ban message
+    local BanStroke = Instance.new("UIStroke", BanText)
+    BanStroke.Thickness = 2
+    BanStroke.Color = Color3.fromRGB(255, 200, 200)
+    BanStroke.Transparency = 0.2
+
+    -- Halt execution entirely for blacklisted users
     return
 end
 
@@ -55,10 +71,11 @@ local TRIGGERBOT_ENABLED = false
 local AUTO_ESCAPE_ENABLED = false
 local BRING_RAKOOF_ENABLED = false
 local FLYING_SHARK_ENABLED = false
+local FORCE_LUCK_ENABLED = false
 
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, sharkLoop = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, sharkLoop, forceLuckLoop = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
 
 local TARGET_ITEMS = {
     "GoldenApple", "LegendaryEnergy", "IgnitionFlame", 
@@ -72,6 +89,29 @@ local WEAPON_PRIORITY = {
     "Murasama",
     "StunStick"
 }
+
+--------------------------------------------------------------------------------
+-- REMOTE EVENT FINDER (For DropItem / Luck Exploit)
+--------------------------------------------------------------------------------
+local function findDropRemote()
+    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+        if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
+            local nameLower = string.lower(obj.Name)
+            if string.find(nameLower, "drop") or string.find(nameLower, "item") or string.find(nameLower, "loot") or string.find(nameLower, "reward") then
+                return obj
+            end
+        end
+    end
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("RemoteEvent") then
+            local nameLower = string.lower(obj.Name)
+            if string.find(nameLower, "drop") then
+                return obj
+            end
+        end
+    end
+    return nil
+end
 
 --------------------------------------------------------------------------------
 -- TARGET SCANNER & ATTACK LOGIC
@@ -288,8 +328,8 @@ Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
 
 -- Main Hub Frame (Hidden behind blackout until key is correct)
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 720, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -360, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 720, 0, 390)
+MainFrame.Position = UDim2.new(0.5, -360, 0.5, -195)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 18, 26)
 MainFrame.BackgroundTransparency = 0.05
 MainFrame.BorderSizePixel = 0
@@ -346,7 +386,7 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(1, -120, 1, 0)
 TitleText.Position = UDim2.new(0, 14, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V3.15 (Blackout Ultimate)"
+TitleText.Text = "🦈 SHARK HUB V3.18 (Emerald Force Luck)"
 TitleText.TextColor3 = Color3.fromRGB(220, 245, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
@@ -396,7 +436,7 @@ ScrollingFrame.BackgroundTransparency = 1
 ScrollingFrame.BorderSizePixel = 0
 ScrollingFrame.ScrollBarThickness = 4
 ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 240)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 560)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 620)
 ScrollingFrame.Active = true
 ScrollingFrame.Parent = MainFrame
 
@@ -436,6 +476,48 @@ local function CreateButton(text, order, initialActive)
     btn.MouseLeave:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.15}):Play()
         TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.3}):Play()
+    end)
+    
+    return btn, stroke
+end
+
+local function CreateEmeraldButton(text, order)
+    local btn = Instance.new("TextButton")
+    btn.BackgroundColor3 = Color3.fromRGB(15, 45, 25)
+    btn.BackgroundTransparency = 0.1
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(220, 255, 235)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    btn.LayoutOrder = order
+    btn.AutoButtonColor = true
+    btn.Active = true
+    btn.Parent = ScrollingFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = btn
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1.8
+    stroke.Color = Color3.fromRGB(0, 255, 120)
+    stroke.Transparency = 0.1
+    stroke.Parent = btn
+
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 200, 90)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 255, 150)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 160, 70))
+    })
+    grad.Rotation = 45
+    grad.Parent = btn
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(100, 255, 180)}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(0, 255, 120)}):Play()
     end)
     
     return btn, stroke
@@ -494,7 +576,7 @@ end
 SubmitBtn.MouseButton1Click:Connect(function()
     if KeyBox.Text == CORRECT_KEY then
         KeyFrame:Destroy()
-        BlackoutBackground:Destroy() -- Removes the black screen
+        BlackoutBackground:Destroy()
         MainFrame.Visible = true
     else
         KeyBox.Text = ""
@@ -506,25 +588,26 @@ SubmitBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- BUTTON CONTROLS & FLYING SHARK
+-- BUTTON CONTROLS & MODULES
 --------------------------------------------------------------------------------
 local AutoRakeBtn, AutoRakeStroke = CreateButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
 local AutoAttackBtn, AutoAttackStroke = CreateButton("⚔️ Auto Attack (Slot 1): OFF", 2, false)
 local TriggerBotBtn, TriggerBotStroke = CreateButton("🎯 Trigger Bot: OFF", 3, false)
 local AutoPickupBtn, AutoPickupStroke = CreateButton("🎁 Auto Pickup Items: OFF", 4, false)
-local AutoEscapeBtn, AutoEscapeStroke = CreateButton("🚨 Auto Escape (20% HP): OFF", 5, false)
-local BringRakoofBtn, BringRakoofStroke = CreateButton("🧲 Bring Rakoof: OFF", 6, false)
-local FlyingSharkBtn, FlyingSharkStroke = CreateButton("🦈 Flying Shark Companion: OFF", 7, false)
-local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 8, false)
-local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 9, false)
-local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 10, false)
-local HitboxBtn, HitboxStroke = CreateButton("📦 Expand Hitbox: OFF", 11, false)
-local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 12, false)
-local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 13, false)
-local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 14, false)
-local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 15, false)
-local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 16, false)
-local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old", "StunStick", "New", "Ruinstrikers", "Rename", 17)
+local ForceLuckBtn, ForceLuckStroke = CreateEmeraldButton("🍀 FORCE LUCK 250%: OFF", 5)
+local AutoEscapeBtn, AutoEscapeStroke = CreateButton("🚨 Auto Escape (20% HP): OFF", 6, false)
+local BringRakoofBtn, BringRakoofStroke = CreateButton("🧲 Bring Rakoof: OFF", 7, false)
+local FlyingSharkBtn, FlyingSharkStroke = CreateButton("🦈 Flying Shark Companion: OFF", 8, false)
+local TPRakoofBtn, _ = CreateButton("🎯 Teleport To DOOFmmy", 9, false)
+local GodModeBtn, GodModeStroke = CreateButton("🛡️ God Mode: OFF", 10, false)
+local BringBtn, BringStroke = CreateButton("🧲 Bring DOOFmmy: OFF", 11, false)
+local HitboxBtn, HitboxStroke = CreateButton("📦 Expand Hitbox: OFF", 12, false)
+local SpeedBtn, SpeedStroke = CreateButton("⚡ Speed Boost: OFF", 13, false)
+local FogBtn, FogStroke = CreateButton("💡 No Fog / Fullbright: OFF", 14, false)
+local CaveABtn, _ = CreateButton("⛰️ Teleport to Cave A", 15, false)
+local CaveBBtn, _ = CreateButton("⛰️ Teleport to Cave B", 16, false)
+local SafezoneBtn, _ = CreateButton("🛡️ Teleport to Safezone", 17, false)
+local ToolOldBox, ToolNewBox, RenameToolBtn = CreateDoubleInput("Old", "StunStick", "New", "Ruinstrikers", "Rename", 18)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == TOGGLE_KEY and MainFrame.Visible then
@@ -532,7 +615,31 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     end
 end)
 
--- Flying Shark Companion Implementation
+ForceLuckBtn.MouseButton1Click:Connect(function()
+    FORCE_LUCK_ENABLED = not FORCE_LUCK_ENABLED
+    ForceLuckBtn.Text = FORCE_LUCK_ENABLED and "🍀 FORCE LUCK 250%: ON" or "🍀 FORCE LUCK 250%: OFF"
+    
+    if FORCE_LUCK_ENABLED then
+        ForceLuckStroke.Color = Color3.fromRGB(0, 255, 200)
+        forceLuckLoop = task.spawn(function()
+            while FORCE_LUCK_ENABLED do
+                local remote = findDropRemote()
+                if remote then
+                    pcall(function()
+                        remote:FireServer("BurnedBone", 250, true)
+                        remote:FireServer("StrangeBar", 250, true)
+                        remote:FireServer("LegendaryEnergy", 250, true)
+                    end)
+                end
+                task.wait(0.5)
+            end
+        end)
+    else
+        FORCE_LUCK_ENABLED = false
+        ForceLuckStroke.Color = Color3.fromRGB(0, 255, 120)
+    end
+end)
+
 FlyingSharkBtn.MouseButton1Click:Connect(function()
     FLYING_SHARK_ENABLED = not FLYING_SHARK_ENABLED
     FlyingSharkBtn.Text = FLYING_SHARK_ENABLED and "🦈 Flying Shark Companion: ON" or "🦈 Flying Shark Companion: OFF"
