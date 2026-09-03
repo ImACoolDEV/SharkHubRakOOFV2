@@ -868,11 +868,775 @@ KeyGrad.Parent = KeyFrame
 
 local KeyTitle = Instance.new("TextLabel")
 KeyTitle.Size = UDim2.new(1, 0, 0, 45)
-KeyTitle.Position = UDim2.new(0, 0, 0, 5)
 KeyTitle.BackgroundTransparency = 1
-KeyTitle.Text = "🦈 SHARK HUB V4 - AUTHENTICATION"
+KeyTitle.Text = "🦈 SHARK HUB — ACCESS CONTROL"
 KeyTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
 KeyTitle.Font = Enum.Font.GothamBold
 KeyTitle.TextSize = 14
 KeyTitle.ZIndex = 3
 KeyTitle.Parent = KeyFrame
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Size = UDim2.new(0.88, 0, 0, 42)
+KeyBox.Position = UDim2.new(0.06, 0, 0, 65)
+KeyBox.BackgroundColor3 = Color3.fromRGB(12, 28, 54)
+KeyBox.Text = ""
+KeyBox.PlaceholderText = "Enter key code here..."
+KeyBox.PlaceholderColor3 = Color3.fromRGB(100, 170, 220)
+KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyBox.Font = Enum.Font.GothamBold
+KeyBox.TextSize = 12
+KeyBox.ZIndex = 3
+KeyBox.Parent = KeyFrame
+Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 8)
+
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Size = UDim2.new(0.88, 0, 0, 42)
+SubmitBtn.Position = UDim2.new(0.06, 0, 0, 120)
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.Text = "AUTHENTICATE"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.TextSize = 13
+SubmitBtn.ZIndex = 3
+SubmitBtn.Parent = KeyFrame
+Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
+
+local SubmitGrad = Instance.new("UIGradient")
+SubmitGrad.Color = BLUE_ON_GRADIENT
+SubmitGrad.Rotation = 90
+SubmitGrad.Parent = SubmitBtn
+
+local PuzzleChallengeBtn = Instance.new("TextButton")
+PuzzleChallengeBtn.Size = UDim2.new(0.88, 0, 0, 40)
+PuzzleChallengeBtn.Position = UDim2.new(0.06, 0, 0, 175)
+PuzzleChallengeBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+PuzzleChallengeBtn.Text = "🧩 SOLVE PUZZLE FOR KEY"
+PuzzleChallengeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PuzzleChallengeBtn.Font = Enum.Font.GothamBold
+PuzzleChallengeBtn.TextSize = 12
+PuzzleChallengeBtn.ZIndex = 3
+PuzzleChallengeBtn.Parent = KeyFrame
+Instance.new("UICorner", PuzzleChallengeBtn).CornerRadius = UDim.new(0, 8)
+
+local PuzzleGrad = Instance.new("UIGradient")
+PuzzleGrad.Color = BLUE_ON_GRADIENT
+PuzzleGrad.Rotation = 90
+PuzzleGrad.Parent = PuzzleChallengeBtn
+
+-- Puzzle Challenge
+local PuzzleFrame = Instance.new("Frame")
+PuzzleFrame.Size = UDim2.new(0, 360, 0, 220)
+PuzzleFrame.Position = UDim2.new(0.5, -180, 0.5, -110)
+PuzzleFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+PuzzleFrame.BorderSizePixel = 0
+PuzzleFrame.Visible = false
+PuzzleFrame.ZIndex = 15
+PuzzleFrame.Parent = ScreenGui
+Instance.new("UICorner", PuzzleFrame).CornerRadius = UDim.new(0, 12)
+makeDraggable(PuzzleFrame)
+
+local PuzzleFrameGrad = Instance.new("UIGradient")
+PuzzleFrameGrad.Color = FRAME_BG_GRADIENT
+PuzzleFrameGrad.Rotation = 45
+PuzzleFrameGrad.Parent = PuzzleFrame
+
+local PuzzleTitle = Instance.new("TextLabel")
+PuzzleTitle.Size = UDim2.new(1, 0, 0, 40)
+PuzzleTitle.BackgroundTransparency = 1
+PuzzleTitle.Text = "🧩 PUZZLE CHALLENGE"
+PuzzleTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
+PuzzleTitle.Font = Enum.Font.GothamBold
+PuzzleTitle.TextSize = 14
+PuzzleTitle.ZIndex = 16
+PuzzleTitle.Parent = PuzzleFrame
+
+local PuzzleQuestion = Instance.new("TextLabel")
+PuzzleQuestion.Size = UDim2.new(0.9, 0, 0, 40)
+PuzzleQuestion.Position = UDim2.new(0.05, 0, 0, 45)
+PuzzleQuestion.BackgroundTransparency = 1
+PuzzleQuestion.Text = "Solve: What is (12 x 8) + 15?"
+PuzzleQuestion.TextColor3 = Color3.fromRGB(0, 220, 255)
+PuzzleQuestion.Font = Enum.Font.GothamMedium
+PuzzleQuestion.TextSize = 13
+PuzzleQuestion.ZIndex = 16
+PuzzleQuestion.Parent = PuzzleFrame
+
+local PuzzleBox = Instance.new("TextBox")
+PuzzleBox.Size = UDim2.new(0.88, 0, 0, 40)
+PuzzleBox.Position = UDim2.new(0.06, 0, 0, 95)
+PuzzleBox.BackgroundColor3 = Color3.fromRGB(12, 28, 54)
+PuzzleBox.Text = ""
+PuzzleBox.PlaceholderText = "Enter answer here..."
+PuzzleBox.PlaceholderColor3 = Color3.fromRGB(100, 170, 220)
+PuzzleBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+PuzzleBox.Font = Enum.Font.GothamBold
+PuzzleBox.TextSize = 12
+PuzzleBox.ZIndex = 16
+PuzzleBox.Parent = PuzzleFrame
+Instance.new("UICorner", PuzzleBox).CornerRadius = UDim.new(0, 8)
+
+local SubmitPuzzleBtn = Instance.new("TextButton")
+SubmitPuzzleBtn.Size = UDim2.new(0.88, 0, 0, 40)
+SubmitPuzzleBtn.Position = UDim2.new(0.06, 0, 0, 148)
+SubmitPuzzleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SubmitPuzzleBtn.Text = "SUBMIT ANSWER"
+SubmitPuzzleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitPuzzleBtn.Font = Enum.Font.GothamBold
+SubmitPuzzleBtn.TextSize = 12
+SubmitPuzzleBtn.ZIndex = 16
+SubmitPuzzleBtn.Parent = PuzzleFrame
+Instance.new("UICorner", SubmitPuzzleBtn).CornerRadius = UDim.new(0, 8)
+
+local SubmitPuzzleGrad = Instance.new("UIGradient")
+SubmitPuzzleGrad.Color = BLUE_ON_GRADIENT
+SubmitPuzzleGrad.Rotation = 90
+SubmitPuzzleGrad.Parent = SubmitPuzzleBtn
+
+--------------------------------------------------------------------------------
+-- MAIN HUB
+--------------------------------------------------------------------------------
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 740, 0, 460)
+MainFrame.Position = UDim2.new(0.5, -370, 0.5, -230)
+MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.ZIndex = 10
+MainFrame.Parent = ScreenGui
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
+makeDraggable(MainFrame)
+
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(80, 210, 255)
+
+local MainGrad = Instance.new("UIGradient")
+MainGrad.Color = FRAME_BG_GRADIENT
+MainGrad.Rotation = 45
+MainGrad.Parent = MainFrame
+
+RunService.RenderStepped:Connect(function()
+    MainGrad.Rotation = (MainGrad.Rotation + 0.2) % 360
+    KeyGrad.Rotation = (KeyGrad.Rotation + 0.2) % 360
+    PuzzleFrameGrad.Rotation = (PuzzleFrameGrad.Rotation + 0.2) % 360
+    SpeedGuiGrad.Rotation = (SpeedGuiGrad.Rotation + 0.2) % 360
+    MiniGameGrad.Rotation = (MiniGameGrad.Rotation + 0.2) % 360
+    ConnectDotsGrad.Rotation = (ConnectDotsGrad.Rotation + 0.2) % 360
+    TournamentGrad.Rotation = (TournamentGrad.Rotation + 0.2) % 360
+    AdminGrad.Rotation = (AdminGrad.Rotation + 0.2) % 360
+end)
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 52)
+TitleBar.BackgroundColor3 = Color3.fromRGB(15, 35, 70)
+TitleBar.ZIndex = 11
+TitleBar.Parent = MainFrame
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 16)
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(0.5, 0, 1, 0)
+TitleText.Position = UDim2.new(0, 18, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "🦈 SHARK HUB V4.0 — MASTER EDITION"
+TitleText.TextColor3 = Color3.fromRGB(180, 235, 255)
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextSize = 16
+TitleText.ZIndex = 12
+TitleText.Parent = TitleBar
+
+local CloseMainHubBtn = Instance.new("TextButton")
+CloseMainHubBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseMainHubBtn.Position = UDim2.new(1, -38, 0, 12)
+CloseMainHubBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+CloseMainHubBtn.Text = "X"
+CloseMainHubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseMainHubBtn.Font = Enum.Font.GothamBold
+CloseMainHubBtn.TextSize = 13
+CloseMainHubBtn.ZIndex = 12
+CloseMainHubBtn.Parent = TitleBar
+Instance.new("UICorner", CloseMainHubBtn).CornerRadius = UDim.new(0, 8)
+
+setupMinimizeControl(MainFrame, CloseMainHubBtn)
+
+if IS_ADMIN then
+    KeyFrame:Destroy()
+    if PuzzleFrame then PuzzleFrame:Destroy() end
+    MainFrame.Visible = true
+end
+
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Size = UDim2.new(1, -24, 1, -68)
+ScrollingFrame.Position = UDim2.new(0, 12, 0, 58)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.ScrollBarThickness = 5
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 255)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.ZIndex = 11
+ScrollingFrame.Parent = MainFrame
+
+local UIGridLayout = Instance.new("UIGridLayout")
+UIGridLayout.CellSize = UDim2.new(0.485, 0, 0, 44)
+UIGridLayout.CellPadding = UDim2.new(0.03, 0, 0, 10)
+UIGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIGridLayout.Parent = ScrollingFrame
+
+UIGridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIGridLayout.AbsoluteContentSize.Y + 20)
+end)
+
+local function CreateBlueButton(text, order, initialActive)
+    local btn = Instance.new("TextButton")
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.LayoutOrder = order
+    btn.ZIndex = 12
+    btn.Parent = ScrollingFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
+    
+    local grad = Instance.new("UIGradient")
+    grad.Color = initialActive and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    grad.Rotation = 90
+    grad.Parent = btn
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Thickness = 1.5
+    stroke.Color = initialActive and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 2.5}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 1.5}):Play()
+    end)
+
+    return btn, stroke, grad
+end
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    if VALID_KEYS[KeyBox.Text] then
+        KeyFrame:Destroy()
+        if PuzzleFrame then PuzzleFrame:Destroy() end
+        MainFrame.Visible = true
+    else
+        KeyBox.Text = ""
+        KeyBox.PlaceholderText = "Invalid Key!"
+        task.delay(1.5, function() KeyBox.PlaceholderText = "Enter key code here..." end)
+    end
+end)
+
+PuzzleChallengeBtn.MouseButton1Click:Connect(function()
+    PuzzleFrame.Visible = true
+end)
+
+SubmitPuzzleBtn.MouseButton1Click:Connect(function()
+    if tonumber(PuzzleBox.Text) == 111 then
+        PuzzleFrame.Visible = false
+        KeyBox.Text = "SHARK-PUZZLE-SOLVED-KEY88"
+        SubmitBtn.Text = "AUTO-UNLOCKING..."
+        task.wait(0.5)
+        KeyFrame:Destroy()
+        MainFrame.Visible = true
+    else
+        PuzzleBox.Text = ""
+        PuzzleBox.PlaceholderText = "Incorrect Answer!"
+        task.delay(1.5, function() PuzzleBox.PlaceholderText = "Enter answer here..." end)
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- MAIN HUB FEATURES
+--------------------------------------------------------------------------------
+local AutoRakeBtn, AutoRakeStroke, AutoRakeGrad = CreateBlueButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
+local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateBlueButton("⚔️ Fast Spam Clicker: OFF", 2, false)
+local GodModeBtn, GodModeStroke, GodModeGrad = CreateBlueButton("🛡️ God Mode / Anti-Damage: OFF", 3, false)
+local BringBossBtn, BringBossStroke, BringBossGrad = CreateBlueButton("🧲 Bring Boss To Player: OFF", 4, false)
+local HitboxBtn, HitboxStroke, HitboxGrad = CreateBlueButton("📦 Expand Target Hitbox: OFF", 5, false)
+local SpeedBtn, SpeedStroke, SpeedGrad = CreateBlueButton("⚡ Speed Boost (50 WalkSpeed): OFF", 6, false)
+local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateBlueButton("🎯 Trigger Bot: OFF", 7, false)
+local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateBlueButton("🎁 Auto Pickup Items: OFF", 8, false)
+local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateBlueButton("💥 FORCE DROP 1000%: OFF", 9, false)
+
+local CalamityBtn, CalamityStroke, CalamityGrad = CreateBlueButton("🔥 CALAMITY TRIGGER MODE: OFF", 10, false)
+local ToolRenamerBtn, _, ToolRenamerGrad = CreateBlueButton("✏️ RENAME ALL TOOLS", 11, false)
+local MiniGameBtn, _, MiniGameBtnGrad = CreateBlueButton("🎮 OPEN MINI-GAME HUB", 12, false)
+
+local Luck250Btn, Luck250Stroke, Luck250Grad = CreateBlueButton("🍀 250% LUCK BOOST: OFF", 13, false)
+local Luck500Btn, Luck500Stroke, Luck500Grad = CreateBlueButton("🔥 500% LUCK BOOST: OFF", 14, false)
+local Luck750Btn, Luck750Stroke, Luck750Grad = CreateBlueButton("💎 750% LUCK BOOST: OFF", 15, false)
+local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateBlueButton("⚡ 1000% LUCKKYYY: OFF", 16, false)
+
+local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 17, false)
+local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 18, false)
+local FlyingSharkBtn, FlyingSharkStroke, FlyingSharkGrad = CreateBlueButton("🦈 Flying Shark Companion: OFF", 19, false)
+local TPRakoofBtn, _, TPRakoofGrad = CreateBlueButton("🎯 Teleport To DOOFmmy", 20, false)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == TOGGLE_KEY and MainFrame then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+AutoRakeBtn.MouseButton1Click:Connect(function()
+    AUTO_RAKE_ENABLED = not AUTO_RAKE_ENABLED
+    AutoRakeBtn.Text = AUTO_RAKE_ENABLED and "🌾 Auto Farm THE_RAKE: ON" or "🌾 Auto Farm THE_RAKE: OFF"
+    AutoRakeGrad.Color = AUTO_RAKE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    AutoRakeStroke.Color = AUTO_RAKE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if AUTO_RAKE_ENABLED then
+        enableContinuousNoclip()
+        rakeLoop = RunService.Heartbeat:Connect(function()
+            local _, rakePart = findTargetModel(RAKE_NAME)
+            local character = LocalPlayer.Character
+            if rakePart and character and character:FindFirstChild("HumanoidRootPart") then
+                character.HumanoidRootPart.CFrame = CFrame.new(rakePart.Position + Vector3.new(0, 2, 0), rakePart.Position)
+                executeFarmAttack()
+            end
+        end)
+    else
+        if rakeLoop then rakeLoop:Disconnect() rakeLoop = nil end
+        disableContinuousNoclip()
+    end
+end)
+
+AutoAttackBtn.MouseButton1Click:Connect(function()
+    AUTO_ATTACK_ENABLED = not AUTO_ATTACK_ENABLED
+    AutoAttackBtn.Text = AUTO_ATTACK_ENABLED and "⚔️ Fast Spam Clicker: ON" or "⚔️ Fast Spam Clicker: OFF"
+    AutoAttackGrad.Color = AUTO_ATTACK_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    AutoAttackStroke.Color = AUTO_ATTACK_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if AUTO_ATTACK_ENABLED then
+        attackLoop = RunService.RenderStepped:Connect(function() executeSpamClick() end)
+    else
+        if attackLoop then attackLoop:Disconnect() attackLoop = nil end
+    end
+end)
+
+GodModeBtn.MouseButton1Click:Connect(function()
+    GODMODE_ENABLED = not GODMODE_ENABLED
+    GodModeBtn.Text = GODMODE_ENABLED and "🛡️ God Mode: ON" or "🛡️ God Mode / Anti-Damage: OFF"
+    GodModeGrad.Color = GODMODE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    GodModeStroke.Color = GODMODE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if GODMODE_ENABLED then
+        godConnection = RunService.Stepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char:FindFirstChildOfClass("Humanoid").Health = char:FindFirstChildOfClass("Humanoid").MaxHealth
+            end
+        end)
+    else
+        if godConnection then godConnection:Disconnect() godConnection = nil end
+    end
+end)
+
+BringBossBtn.MouseButton1Click:Connect(function()
+    BRING_BOSS_ENABLED = not BRING_BOSS_ENABLED
+    BringBossBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring Boss: ON" or "🧲 Bring Boss To Player: OFF"
+    BringBossGrad.Color = BRING_BOSS_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    BringBossStroke.Color = BRING_BOSS_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if BRING_BOSS_ENABLED then
+        bringLoop = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local _, targetPart = findTargetModel(RAKE_NAME)
+                if targetPart then
+                    targetPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+                end
+            end
+        end)
+    else
+        if bringLoop then bringLoop:Disconnect() bringLoop = nil end
+    end
+end)
+
+HitboxBtn.MouseButton1Click:Connect(function()
+    EXPAND_HITBOX_ENABLED = not EXPAND_HITBOX_ENABLED
+    HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand Hitbox: ON" or "📦 Expand Target Hitbox: OFF"
+    HitboxGrad.Color = EXPAND_HITBOX_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    HitboxStroke.Color = EXPAND_HITBOX_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if EXPAND_HITBOX_ENABLED then
+        hitboxLoop = RunService.Heartbeat:Connect(function()
+            local _, rakePart = findTargetModel(RAKE_NAME)
+            local _, doofPart = findTargetModel(TARGET_NAME)
+            if rakePart then rakePart.Size = Vector3.new(20, 20, 20) rakePart.Transparency = 0.7 end
+            if doofPart then doofPart.Size = Vector3.new(20, 20, 20) doofPart.Transparency = 0.7 end
+        end)
+    else
+        if hitboxLoop then hitboxLoop:Disconnect() hitboxLoop = nil end
+    end
+end)
+
+SpeedBtn.MouseButton1Click:Connect(function()
+    SPEED_BOOST_ENABLED = not SPEED_BOOST_ENABLED
+    SpeedBtn.Text = SPEED_BOOST_ENABLED and "⚡ Speed Boost: ON" or "⚡ Speed Boost (50 WalkSpeed): OFF"
+    SpeedGrad.Color = SPEED_BOOST_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    SpeedStroke.Color = SPEED_BOOST_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        char:FindFirstChildOfClass("Humanoid").WalkSpeed = SPEED_BOOST_ENABLED and 50 or 16
+    end
+end)
+
+TriggerBotBtn.MouseButton1Click:Connect(function()
+    TRIGGERBOT_ENABLED = not TRIGGERBOT_ENABLED
+    TriggerBotBtn.Text = TRIGGERBOT_ENABLED and "🎯 Trigger Bot: ON" or "🎯 Trigger Bot: OFF"
+    TriggerBotGrad.Color = TRIGGERBOT_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    TriggerBotStroke.Color = TRIGGERBOT_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if TRIGGERBOT_ENABLED then
+        triggerBotConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+            local _, bossRoot = findTargetModel(RAKE_NAME)
+            if not bossRoot then _, bossRoot = findTargetModel(TARGET_NAME) end
+
+            if bossRoot and (hrp.Position - bossRoot.Position).Magnitude <= 25 then
+                executeSpamClick()
+            end
+        end)
+    else
+        if triggerBotConnection then triggerBotConnection:Disconnect() triggerBotConnection = nil end
+    end
+end)
+
+AutoPickupBtn.MouseButton1Click:Connect(function()
+    AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
+    AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Auto Pickup: ON" or "🎁 Auto Pickup Items: OFF"
+    AutoPickupGrad.Color = AUTO_PICKUP_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    AutoPickupStroke.Color = AUTO_PICKUP_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if AUTO_PICKUP_ENABLED then
+        pickupLoop = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+
+            for _, obj in ipairs(Workspace:GetChildren()) do
+                if obj:IsA("Tool") or obj:IsA("Model") then
+                    for _, itemName in ipairs(TARGET_ITEMS) do
+                        if string.find(string.lower(obj.Name), string.lower(itemName)) then
+                            local part = obj:FindFirstChildWhichIsA("BasePart")
+                            if part then
+                                part.CFrame = hrp.CFrame
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if pickupLoop then pickupLoop:Disconnect() pickupLoop = nil end
+    end
+end)
+
+ForceDropBtn.MouseButton1Click:Connect(function()
+    FORCE_DROP_ENABLED = not FORCE_DROP_ENABLED
+    ForceDropBtn.Text = FORCE_DROP_ENABLED and "💥 FORCE DROP 1000%: ON" or "💥 FORCE DROP 1000%: OFF"
+    ForceDropGrad.Color = FORCE_DROP_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    ForceDropStroke.Color = FORCE_DROP_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    
+    if FORCE_DROP_ENABLED then
+        forceDropLoop = task.spawn(function()
+            while FORCE_DROP_ENABLED do
+                local itemDropRemote = findItemDropRemote()
+                if itemDropRemote then
+                    pcall(function()
+                        for _, itemName in ipairs(TARGET_ITEMS) do
+                            itemDropRemote:FireServer(itemName, 1000, true)
+                            itemDropRemote:FireServer({Item = itemName, Rate = 1000, Force = true})
+                        end
+                    end)
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        if forceDropLoop then task.cancel(forceDropLoop) forceDropLoop = nil end
+    end
+end)
+
+CalamityBtn.MouseButton1Click:Connect(function()
+    CALAMITY_MODE_ENABLED = not CALAMITY_MODE_ENABLED
+    CalamityBtn.Text = CALAMITY_MODE_ENABLED and "🔥 CALAMITY MODE: ON" or "🔥 CALAMITY TRIGGER MODE: OFF"
+    CalamityGrad.Color = CALAMITY_MODE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    CalamityStroke.Color = CALAMITY_MODE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if CALAMITY_MODE_ENABLED then
+        calamityLoop = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+            
+            local _, targetPart = findTargetModel(RAKE_NAME)
+            if not targetPart then _, targetPart = findTargetModel(TARGET_NAME) end
+
+            if targetPart then
+                local angle = tick() * 12
+                local offset = Vector3.new(math.cos(angle) * 4, 3, math.sin(angle) * 4)
+                hrp.CFrame = CFrame.new(targetPart.Position + offset, targetPart.Position)
+                executeSpamClick()
+            end
+        end)
+    else
+        if calamityLoop then calamityLoop:Disconnect() calamityLoop = nil end
+    end
+end)
+
+ToolRenamerBtn.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    
+    local function renameItems(container)
+        if not container then return end
+        for _, item in ipairs(container:GetChildren()) do
+            if item:IsA("Tool") then
+                item.Name = "⚡ Calamity Blade"
+            end
+        end
+    end
+
+    renameItems(char)
+    renameItems(backpack)
+    
+    ToolRenamerBtn.Text = "✅ ALL TOOLS RENAMED!"
+    task.delay(1.5, function() ToolRenamerBtn.Text = "✏️ RENAME ALL TOOLS" end)
+end)
+
+MiniGameBtn.MouseButton1Click:Connect(function()
+    if miniGameScore < 50 then
+        MiniGameFrame.Visible = true
+        moveTarget()
+    elseif connectDotsWins < 10 then
+        ConnectDotsFrame.Visible = true
+    else
+        TournamentFrame.Visible = true
+    end
+end)
+
+Luck250Btn.MouseButton1Click:Connect(function()
+    LUCK_250_ENABLED = not LUCK_250_ENABLED
+    Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% LUCK BOOST: ON" or "🍀 250% LUCK BOOST: OFF"
+    Luck250Grad.Color = LUCK_250_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck250Stroke.Color = LUCK_250_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_250_ENABLED then
+        luck250Loop = task.spawn(function()
+            while LUCK_250_ENABLED do
+                applyLuckMultiplier(2.5)
+                task.wait(0.2)
+            end
+        end)
+    else
+        if luck250Loop then task.cancel(luck250Loop) luck250Loop = nil end
+    end
+end)
+
+Luck500Btn.MouseButton1Click:Connect(function()
+    LUCK_500_ENABLED = not LUCK_500_ENABLED
+    Luck500Btn.Text = LUCK_500_ENABLED and "🔥 500% LUCK BOOST: ON" or "🔥 500% LUCK BOOST: OFF"
+    Luck500Grad.Color = LUCK_500_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck500Stroke.Color = LUCK_500_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_500_ENABLED then
+        luck500Loop = task.spawn(function()
+            while LUCK_500_ENABLED do
+                applyLuckMultiplier(5.0)
+                task.wait(0.2)
+            end
+        end)
+    else
+        if luck500Loop then task.cancel(luck500Loop) luck500Loop = nil end
+    end
+end)
+
+Luck750Btn.MouseButton1Click:Connect(function()
+    LUCK_750_ENABLED = not LUCK_750_ENABLED
+    Luck750Btn.Text = LUCK_750_ENABLED and "💎 750% LUCK BOOST: ON" or "💎 750% LUCK BOOST: OFF"
+    Luck750Grad.Color = LUCK_750_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck750Stroke.Color = LUCK_750_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_750_ENABLED then
+        luck750Loop = task.spawn(function()
+            while LUCK_750_ENABLED do
+                applyLuckMultiplier(7.5)
+                task.wait(0.2)
+            end
+        end)
+    else
+        if luck750Loop then task.cancel(luck750Loop) luck750Loop = nil end
+    end
+end)
+
+Luck1000Btn.MouseButton1Click:Connect(function()
+    LUCK_1000_ENABLED = not LUCK_1000_ENABLED
+    Luck1000Btn.Text = LUCK_1000_ENABLED and "⚡ 1000% LUCKKYYY: ON" or "⚡ 1000% LUCKKYYY: OFF"
+    Luck1000Grad.Color = LUCK_1000_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    Luck1000Stroke.Color = LUCK_1000_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if LUCK_1000_ENABLED then
+        luck1000Loop = task.spawn(function()
+            while LUCK_1000_ENABLED do
+                applyLuckMultiplier(10.0)
+                task.wait(0.1)
+            end
+        end)
+    else
+        if luck1000Loop then task.cancel(luck1000Loop) luck1000Loop = nil end
+    end
+end)
+
+AutoEscapeBtn.MouseButton1Click:Connect(function()
+    AUTO_ESCAPE_ENABLED = not AUTO_ESCAPE_ENABLED
+    AutoEscapeBtn.Text = AUTO_ESCAPE_ENABLED and "🚨 Auto Escape: ON" or "🚨 Auto Escape (20% HP): OFF"
+    AutoEscapeGrad.Color = AUTO_ESCAPE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    AutoEscapeStroke.Color = AUTO_ESCAPE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if AUTO_ESCAPE_ENABLED then
+        escapeConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if (hum.Health / hum.MaxHealth) <= 0.2 then
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 150, 0)
+                end
+            end
+        end)
+    else
+        if escapeConnection then escapeConnection:Disconnect() escapeConnection = nil end
+    end
+end)
+
+BringRakoofBtn.MouseButton1Click:Connect(function()
+    BRING_RAKOOF_ENABLED = not BRING_RAKOOF_ENABLED
+    BringRakoofBtn.Text = BRING_RAKOOF_ENABLED and "🧲 Bring Rakoof: ON" or "🧲 Bring Rakoof: OFF"
+    BringRakoofGrad.Color = BRING_RAKOOF_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    BringRakoofStroke.Color = BRING_RAKOOF_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if BRING_RAKOOF_ENABLED then
+        bringRakoofLoop = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local _, targetPart = findTargetModel(TARGET_NAME)
+                if targetPart then
+                    targetPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
+                end
+            end
+        end)
+    else
+        if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- ADVANCED DETAILED SHARK COMPANION
+--------------------------------------------------------------------------------
+local function CreateDetailedSharkCompanion()
+    local model = Instance.new("Model")
+    model.Name = "MasterSharkCompanion"
+
+    local root = Instance.new("Part")
+    root.Name = "HumanoidRootPart"
+    root.Size = Vector3.new(1, 1, 1)
+    root.Transparency = 1
+    root.CanCollide = false
+    root.Parent = model
+    model.PrimaryPart = root
+
+    local sharkColor = Color3.fromRGB(60, 120, 180)
+    local bellyColor = Color3.fromRGB(230, 235, 240)
+
+    local body = Instance.new("Part")
+    body.Size = Vector3.new(1.8, 1.5, 3.8)
+    body.Color = sharkColor
+    body.Material = Enum.Material.SmoothPlastic
+    body.CanCollide = false
+    body.Parent = model
+
+    local bodyMesh = Instance.new("SpecialMesh")
+    bodyMesh.MeshType = Enum.MeshType.Sphere
+    bodyMesh.Parent = body
+
+    local bodyWeld = Instance.new("Weld")
+    bodyWeld.Part0 = root
+    bodyWeld.Part1 = body
+    bodyWeld.Parent = body
+
+    local belly = Instance.new("Part")
+    belly.Size = Vector3.new(1.5, 0.9, 3.4)
+    belly.Color = bellyColor
+    belly.Material = Enum.Material.SmoothPlastic
+    belly.CanCollide = false
+    belly.Parent = model
+
+    local bellyMesh = Instance.new("SpecialMesh")
+    bellyMesh.MeshType = Enum.MeshType.Sphere
+    bellyMesh.Parent = belly
+
+    local bellyWeld = Instance.new("Weld")
+    bellyWeld.Part0 = body
+    bellyWeld.Part1 = belly
+    bellyWeld.C0 = CFrame.new(0, -0.3, 0)
+    bellyWeld.Parent = belly
+
+    local dorsal = Instance.new("WedgePart")
+    dorsal.Size = Vector3.new(0.3, 1.6, 1.6)
+    dorsal.Color = sharkColor
+    dorsal.Material = Enum.Material.SmoothPlastic
+    dorsal.CanCollide = false
+    dorsal.Parent = model
+
+    local dorsalWeld = Instance.new("Weld")
+    dorsalWeld.Part0 = body
+    dorsalWeld.Part1 = dorsal
+    dorsalWeld.C0 = CFrame.new(0, 1.3, 0.2) * CFrame.Angles(0, math.rad(180), 0)
+    dorsalWeld.Parent = dorsal
+
+    return model
+end
+
+FlyingSharkBtn.MouseButton1Click:Connect(function()
+    FLYING_SHARK_ENABLED = not FLYING_SHARK_ENABLED
+    FlyingSharkBtn.Text = FLYING_SHARK_ENABLED and "🦈 Flying Shark Companion: ON" or "🦈 Flying Shark Companion: OFF"
+    FlyingSharkGrad.Color = FLYING_SHARK_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    FlyingSharkStroke.Color = FLYING_SHARK_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if FLYING_SHARK_ENABLED then
+        local companion = CreateDetailedSharkCompanion()
+        companion.Parent = Workspace
+
+        local angle = 0
+        sharkLoop = RunService.RenderStepped:Connect(function(dt)
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+            angle = angle + (dt * 3)
+            companion.PrimaryPart.CFrame = CFrame.new(hrp.Position + Vector3.new(math.cos(angle) * 6, 4 + math.sin(angle * 2) * 1.5, math.sin(angle) * 6), hrp.Position)
+        end)
+    else
+        if sharkLoop then sharkLoop:Disconnect() sharkLoop = nil end
+        local existing = Workspace:FindFirstChild("MasterSharkCompanion")
+        if existing then existing:Destroy() end
+    end
+end)
+
+TPRakoofBtn.MouseButton1Click:Connect(function()
+    local _, targetPart = findTargetModel(TARGET_NAME)
+    local character = LocalPlayer.Character
+    if targetPart and character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = targetPart.CFrame * CFrame.new(0, 0, 3.5)
+        TPRakoofBtn.Text = "✅ Teleported!"
+    else
+        TPRakoofBtn.Text = "❌ Not Found!"
+    end
+    task.delay(2, function() TPRakoofBtn.Text = "🎯 Teleport To DOOFmmy" end)
+end)
