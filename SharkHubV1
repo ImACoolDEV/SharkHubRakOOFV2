@@ -965,7 +965,6 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Integrated Auto Pickup Loop with Touch/Proximity support
 AutoPickupBtn.MouseButton1Click:Connect(function()
     AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
     AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Auto Pickup: ON" or "🎁 Auto Pickup Items: OFF"
@@ -978,30 +977,13 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local hrp = char.HumanoidRootPart
 
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") or obj:IsA("Tool") or obj:IsA("Model") then
-                    local matched = false
+            for _, obj in ipairs(Workspace:GetChildren()) do
+                if obj:IsA("Tool") or obj:IsA("Model") then
                     for _, itemName in ipairs(TARGET_ITEMS) do
                         if string.find(string.lower(obj.Name), string.lower(itemName)) then
-                            matched = true
-                            break
-                        end
-                    end
-
-                    if matched then
-                        local targetPart = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
-                        if targetPart then
-                            targetPart.CFrame = hrp.CFrame
-                            
-                            local touchInterest = targetPart:FindFirstChildWhichIsA("TouchTransmitter", true) or obj:FindFirstChildWhichIsA("TouchTransmitter", true)
-                            if touchInterest and firetouchinterest then
-                                firetouchinterest(hrp, targetPart, 0)
-                                firetouchinterest(hrp, targetPart, 1)
-                            end
-
-                            local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
-                            if prompt and fireproximityprompt then
-                                fireproximityprompt(prompt)
+                            local part = obj:FindFirstChildWhichIsA("BasePart")
+                            if part then
+                                part.CFrame = hrp.CFrame
                             end
                         end
                     end
@@ -1202,4 +1184,3 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
     else
         if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
     end
-end)
