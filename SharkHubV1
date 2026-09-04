@@ -1,4 +1,4 @@
--- Shark Hub V3.30 | Glassmorphic Multi-Key Edition (AI Battle Edition)
+-- Shark Hub V3.30 | Glassmorphic Multi-Key Edition (AI Battle + Calamity Trigger Edition)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -70,7 +70,8 @@ local LUCK_500_ENABLED = false
 local LUCK_750_ENABLED = false
 local LUCK_1000_ENABLED = false
 
-local TOGGLE_KEY = Enum.KeyCode.RightControl 
+local TOGGLE_KEY = Enum.KeyCode.RightControl
+local QUICK_TOGGLE_KEY = Enum.KeyCode.X 
 
 -- Connection Variables
 local aiBattleLoop, attackLoop, bringLoop, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, forceDropLoop
@@ -127,25 +128,6 @@ local function findTargetModel(query)
     return nil, nil
 end
 
-local function getBestWeapon()
-    local character = LocalPlayer.Character
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if not character or not backpack then return nil end
-
-    for _, weaponName in ipairs(WEAPON_PRIORITY) do
-        local equipped = character:FindFirstChild(weaponName)
-        if equipped and equipped:IsA("Tool") then return equipped end
-        
-        local inBackpack = backpack:FindFirstChild(weaponName)
-        if inBackpack and inBackpack:IsA("Tool") then return inBackpack end
-    end
-    
-    for _, tool in ipairs(backpack:GetChildren()) do
-        if tool:IsA("Tool") then return tool end
-    end
-    return nil
-end
-
 local function executeSpamClick()
     VirtualUser:Button1Down(Vector2.zero, Workspace.CurrentCamera.CFrame)
     VirtualUser:Button1Up(Vector2.zero, Workspace.CurrentCamera.CFrame)
@@ -159,9 +141,12 @@ local function executeSpamClick()
     end
 end
 
--- Helper logic to trigger CalamityMAIN script triggers
-local function triggerCalamityScript()
-    for _, scriptObj in ipairs(game:GetDescendants()) do
+-- Deep scan logic inside THE_RAKE model to fire or run CalamityMAIN
+local function triggerCalamityInsideRake()
+    local rakeModel = findTargetModel(RAKE_NAME)
+    local searchContainer = rakeModel or Workspace
+
+    for _, scriptObj in ipairs(searchContainer:GetDescendants()) do
         if scriptObj.Name == "CalamityMAIN" then
             if scriptObj:IsA("BindableEvent") or scriptObj:IsA("RemoteEvent") then
                 pcall(function() scriptObj:FireServer() end)
@@ -220,6 +205,30 @@ local FRAME_BG_GRADIENT = ColorSequence.new({
     ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 38, 75)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 12, 28))
 })
+
+--------------------------------------------------------------------------------
+-- TOP SHARK CIRCLE BUTTON (TOGGLED WITH X KEY)
+--------------------------------------------------------------------------------
+local TopCircleBtn = Instance.new("TextButton")
+TopCircleBtn.Name = "TopSharkCircle"
+TopCircleBtn.Size = UDim2.new(0, 50, 0, 50)
+TopCircleBtn.Position = UDim2.new(0.5, -25, 0, 10)
+TopCircleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TopCircleBtn.Text = "🦈"
+TopCircleBtn.TextSize = 26
+TopCircleBtn.Visible = false
+TopCircleBtn.ZIndex = 80
+TopCircleBtn.Parent = ScreenGui
+Instance.new("UICorner", TopCircleBtn).CornerRadius = UDim.new(1, 0)
+
+local CircleStroke = Instance.new("UIStroke", TopCircleBtn)
+CircleStroke.Thickness = 2
+CircleStroke.Color = Color3.fromRGB(80, 210, 255)
+
+local CircleGrad = Instance.new("UIGradient")
+CircleGrad.Color = BLUE_ON_GRADIENT
+CircleGrad.Rotation = 45
+CircleGrad.Parent = TopCircleBtn
 
 --------------------------------------------------------------------------------
 -- WALKSPEED CHANGER GUI
@@ -294,7 +303,7 @@ ApplySpeedBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- FUN MINI-GAME: SHARK ATTACK CLICKER
+-- MINI-GAME: SHARK ATTACK CLICKER
 --------------------------------------------------------------------------------
 local MiniGameFrame = Instance.new("Frame")
 MiniGameFrame.Size = UDim2.new(0, 320, 0, 240)
@@ -567,6 +576,7 @@ RunService.RenderStepped:Connect(function()
     PuzzleFrameGrad.Rotation = (PuzzleFrameGrad.Rotation + 0.2) % 360
     SpeedGuiGrad.Rotation = (SpeedGuiGrad.Rotation + 0.2) % 360
     MiniGameGrad.Rotation = (MiniGameGrad.Rotation + 0.2) % 360
+    CircleGrad.Rotation = (CircleGrad.Rotation + 0.5) % 360
 end)
 
 local TitleBar = Instance.new("Frame")
@@ -728,9 +738,19 @@ local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateBlueButton("⚡ 1000% LU
 local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 15, false)
 local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 16, false)
 
--- Toggle Menu Key
+-- Toggle Menu Keybinds (RightControl toggles menu, X toggles Top Shark Icon)
 UserInputService.InputBegan:Connect(function(input, gpe)
-    if not gpe and input.KeyCode == TOGGLE_KEY and MainFrame then
+    if not gpe then
+        if input.KeyCode == TOGGLE_KEY and MainFrame then
+            MainFrame.Visible = not MainFrame.Visible
+        elseif input.KeyCode == QUICK_TOGGLE_KEY then
+            TopCircleBtn.Visible = not TopCircleBtn.Visible
+        end
+    end
+end)
+
+TopCircleBtn.MouseButton1Click:Connect(function()
+    if MainFrame then
         MainFrame.Visible = not MainFrame.Visible
     end
 end)
@@ -739,7 +759,7 @@ end)
 -- FEATURE LOGIC
 --------------------------------------------------------------------------------
 
--- UPDATED: AI Battle mode targeting THE_RAKE & invoking CalamityMAIN
+-- AI Battle Mode targeting THE_RAKE & trigger CalamityMAIN inside THE_RAKE
 AIBattleBtn.MouseButton1Click:Connect(function()
     AI_BATTLE_ENABLED = not AI_BATTLE_ENABLED
     AIBattleBtn.Text = AI_BATTLE_ENABLED and "🤖 AI BATTLE (THE_RAKE): ON" or "🤖 AI BATTLE (THE_RAKE): OFF"
@@ -748,7 +768,7 @@ AIBattleBtn.MouseButton1Click:Connect(function()
 
     if AI_BATTLE_ENABLED then
         enableContinuousNoclip()
-        triggerCalamityScript()
+        triggerCalamityInsideRake()
 
         aiBattleLoop = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
