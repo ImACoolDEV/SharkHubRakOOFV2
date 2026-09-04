@@ -1180,71 +1180,56 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- HYPER-RELIABLE JUGGERNAUT BATON MODIFIER LOOP (TREBTREBALT3)
+-- JUGGERNAUT BATON MODIFIER LOOP (EXECUTOR SAFE)
 --------------------------------------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
 local TARGET_PLAYER_NAME = "trebtrebalt3"
 
-local function applyValueModifications(container)
-    if not container then return end
+local function modifyTool(tool)
+	if not tool then return end
 
-    -- 1. Scan direct Attributes on the tool
-    for _, attrName in ipairs({"Damage", "damage", "Cooldown", "cooldown", "CooldownTime", "AttackDelay"}) do
-        if container:GetAttribute(attrName) ~= nil then
-            if string.find(string.lower(attrName), "damage") then
-                container:SetAttribute(attrName, 10000)
-            else
-                container:SetAttribute(attrName, 0.0001)
-            end
-        end
-    end
+	-- 1. Modify Attributes
+	for _, attr in ipairs({"Damage", "damage", "Cooldown", "cooldown"}) do
+		if tool:GetAttribute(attr) ~= nil then
+			local newValue = string.find(string.lower(attr), "damage") and 10000 or 0.0001
+			tool:SetAttribute(attr, newValue)
+		end
+	end
 
-    -- 2. Deep scan descendants for Configuration/Value objects and ModuleScripts
-    for _, obj in ipairs(container:GetDescendants()) do
-        local nameLower = string.lower(obj.Name)
-
-        if obj:IsA("ValueBase") then
-            if string.find(nameLower, "damage") then
-                if obj.Value ~= 10000 then obj.Value = 10000 end
-            elseif string.find(nameLower, "cooldown") or string.find(nameLower, "delay") or string.find(nameLower, "wait") then
-                if obj.Value ~= 0.0001 then obj.Value = 0.0001 end
-            end
-        elseif obj:IsA("ModuleScript") then
-            pcall(function()
-                local loaded = require(obj)
-                if type(loaded) == "table" then
-                    for k, _ in pairs(loaded) do
-                        local kLower = string.lower(tostring(k))
-                        if string.find(kLower, "damage") then
-                            rawset(loaded, k, 10000)
-                        elseif string.find(kLower, "cooldown") or string.find(kLower, "delay") then
-                            rawset(loaded, k, 0.0001)
-                        end
-                    end
-                end
-            end)
-        end
-    end
+	-- 2. Modify Value Objects (NumberValue, IntValue, etc.)
+	for _, obj in ipairs(tool:GetDescendants()) do
+		if obj:IsA("ValueBase") then
+			local nameLower = string.lower(obj.Name)
+			if string.find(nameLower, "damage") then
+				if obj.Value ~= 10000 then obj.Value = 10000 end
+			elseif string.find(nameLower, "cooldown") or string.find(nameLower, "delay") then
+				if obj.Value ~= 0.0001 then obj.Value = 0.0001 end
+			end
+		end
+	end
 end
 
 local function modifyJuggernautBaton()
-    local targetPlayer = Players:FindFirstChild(TARGET_PLAYER_NAME) or LocalPlayer
-    if not targetPlayer then return end
+	local targetPlayer = Players:FindFirstChild(TARGET_PLAYER_NAME) or LocalPlayer
+	if not targetPlayer then return end
 
-    local backpack = targetPlayer:FindFirstChild("Backpack")
-    local character = targetPlayer.Character
+	local backpack = targetPlayer:FindFirstChild("Backpack")
+	local character = targetPlayer.Character
 
-    local containers = {backpack, character}
-    for _, parent in ipairs(containers) do
-        if parent then
-            for _, item in ipairs(parent:GetChildren()) do
-                if item:IsA("Tool") and string.find(string.lower(item.Name), "juggernaut") then
-                    applyValueModifications(item)
-                end
-            end
-        end
-    end
+	for _, parent in ipairs({backpack, character}) do
+		if parent then
+			for _, item in ipairs(parent:GetChildren()) do
+				if item:IsA("Tool") and string.find(string.lower(item.Name), "juggernaut") then
+					modifyTool(item)
+				end
+			end
+		end
+	end
 end
 
 RunService.Heartbeat:Connect(function()
-    pcall(modifyJuggernautBaton)
+	pcall(modifyJuggernautBaton)
 end)
