@@ -1,4 +1,4 @@
--- Shark Hub V3.30 | Glassmorphic Multi-Key Edition (AI Battle + Calamity Trigger Edition)
+-- Shark Hub V3.40 | Galaxy Edition (Calamity Trigger Included)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -23,14 +23,14 @@ if LocalPlayer.UserId == BANNED_USER_ID or LocalPlayer.Name == BANNED_USERNAME t
 
     local BanFrame = Instance.new("Frame")
     BanFrame.Size = UDim2.new(1, 0, 1, 0)
-    BanFrame.BackgroundColor3 = Color3.fromRGB(10, 15, 30)
+    BanFrame.BackgroundColor3 = Color3.fromRGB(10, 5, 20)
     BanFrame.Parent = BanGui
 
     local BanText = Instance.new("TextLabel")
     BanText.Size = UDim2.new(1, 0, 1, 0)
     BanText.BackgroundTransparency = 1
     BanText.Text = "UR BLACK LISTED"
-    BanText.TextColor3 = Color3.fromRGB(0, 200, 255)
+    BanText.TextColor3 = Color3.fromRGB(180, 70, 255)
     BanText.Font = Enum.Font.GothamBold
     BanText.TextSize = 48
     BanText.Parent = BanFrame
@@ -82,8 +82,6 @@ local TARGET_ITEMS = {
     "SnowFlakes", "CorruptedHalo", "StrangeBar", "BurnedBone",
     "Penguin", "PenguinPart", "PenguinParts", "Mesh", "Meshes"
 }
-
-local WEAPON_PRIORITY = { "Ruinstrikers", "TormentumAxe", "Murasama", "StunStick" }
 
 local function findItemDropRemote()
     local itemDrop = ReplicatedStorage:FindFirstChild("ItemDrop", true) or Workspace:FindFirstChild("ItemDrop", true)
@@ -141,23 +139,48 @@ local function executeSpamClick()
     end
 end
 
--- Deep scan logic inside THE_RAKE model to fire or run CalamityMAIN
+-- Strictly searches inside THE_RAKE model for CalamityMAIN to trigger it
 local function triggerCalamityInsideRake()
-    local rakeModel = findTargetModel(RAKE_NAME)
-    local searchContainer = rakeModel or Workspace
+    local rakeModel = nil
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and string.find(string.lower(obj.Name), "the_rake") then
+            rakeModel = obj
+            break
+        end
+    end
 
-    for _, scriptObj in ipairs(searchContainer:GetDescendants()) do
-        if scriptObj.Name == "CalamityMAIN" then
-            if scriptObj:IsA("BindableEvent") or scriptObj:IsA("RemoteEvent") then
-                pcall(function() scriptObj:FireServer() end)
-                pcall(function() scriptObj:Fire() end)
-            elseif scriptObj:IsA("ModuleScript") then
-                pcall(function() require(scriptObj)() end)
-            elseif scriptObj:IsA("LocalScript") and scriptObj.Enabled == false then
-                scriptObj.Enabled = true
+    if not rakeModel then
+        warn("THE_RAKE model not found in Workspace!")
+        return 0
+    end
+
+    local triggeredCount = 0
+
+    for _, target in ipairs(rakeModel:GetDescendants()) do
+        if target.Name == "CalamityMAIN" then
+            triggeredCount = triggeredCount + 1
+            
+            if target:IsA("RemoteEvent") or target:IsA("UnreliableRemoteEvent") then
+                pcall(function() target:FireServer() end)
+            elseif target:IsA("BindableEvent") then
+                pcall(function() target:Fire() end)
+            elseif target:IsA("ModuleScript") then
+                pcall(function() 
+                    local loadedModule = require(target)
+                    if type(loadedModule) == "function" then
+                        loadedModule()
+                    elseif type(loadedModule) == "table" and loadedModule.Init then
+                        loadedModule.Init()
+                    end
+                end)
+            elseif target:IsA("Script") or target:IsA("LocalScript") then
+                target.Disabled = false
+                target.Enabled = true
             end
         end
     end
+
+    return triggeredCount
 end
 
 local function enableContinuousNoclip()
@@ -180,30 +203,30 @@ local function disableContinuousNoclip()
 end
 
 --------------------------------------------------------------------------------
--- BLUE GRADIENT UI IMPLEMENTATION
+-- GALAXY THEME GRADIENTS & COLOR DEFINITIONS
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SharkHubV3_FullBlue"
+ScreenGui.Name = "SharkHubV3_Galaxy"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.DisplayOrder = 100
 ScreenGui.Parent = PlayerGui
 
-local BLUE_OFF_GRADIENT = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 30, 60)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 60, 110)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 25, 50))
+local GALAXY_OFF_GRADIENT = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 10, 30)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(35, 15, 50)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 5, 20))
 })
 
-local BLUE_ON_GRADIENT = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 110, 230)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 180, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 230, 255))
+local GALAXY_ON_GRADIENT = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 40, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 60, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 190, 255))
 })
 
-local FRAME_BG_GRADIENT = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 18, 38)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 38, 75)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 12, 28))
+local GALAXY_FRAME_GRADIENT = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 4, 18)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(22, 10, 45)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 2, 12))
 })
 
 --------------------------------------------------------------------------------
@@ -214,7 +237,7 @@ TopCircleBtn.Name = "TopSharkCircle"
 TopCircleBtn.Size = UDim2.new(0, 50, 0, 50)
 TopCircleBtn.Position = UDim2.new(0.5, -25, 0, 10)
 TopCircleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TopCircleBtn.Text = "🦈"
+TopCircleBtn.Text = "🪐"
 TopCircleBtn.TextSize = 26
 TopCircleBtn.Visible = false
 TopCircleBtn.ZIndex = 80
@@ -223,10 +246,10 @@ Instance.new("UICorner", TopCircleBtn).CornerRadius = UDim.new(1, 0)
 
 local CircleStroke = Instance.new("UIStroke", TopCircleBtn)
 CircleStroke.Thickness = 2
-CircleStroke.Color = Color3.fromRGB(80, 210, 255)
+CircleStroke.Color = Color3.fromRGB(200, 80, 255)
 
 local CircleGrad = Instance.new("UIGradient")
-CircleGrad.Color = BLUE_ON_GRADIENT
+CircleGrad.Color = GALAXY_ON_GRADIENT
 CircleGrad.Rotation = 45
 CircleGrad.Parent = TopCircleBtn
 
@@ -244,10 +267,10 @@ Instance.new("UICorner", SpeedGuiFrame).CornerRadius = UDim.new(0, 10)
 
 local SpeedGuiStroke = Instance.new("UIStroke", SpeedGuiFrame)
 SpeedGuiStroke.Thickness = 1.5
-SpeedGuiStroke.Color = Color3.fromRGB(80, 210, 255)
+SpeedGuiStroke.Color = Color3.fromRGB(180, 70, 255)
 
 local SpeedGuiGrad = Instance.new("UIGradient")
-SpeedGuiGrad.Color = FRAME_BG_GRADIENT
+SpeedGuiGrad.Color = GALAXY_FRAME_GRADIENT
 SpeedGuiGrad.Rotation = 45
 SpeedGuiGrad.Parent = SpeedGuiFrame
 
@@ -256,7 +279,7 @@ SpeedTitle.Size = UDim2.new(1, 0, 0, 22)
 SpeedTitle.Position = UDim2.new(0, 0, 0, 4)
 SpeedTitle.BackgroundTransparency = 1
 SpeedTitle.Text = "⚡ SPEED CHANGER"
-SpeedTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
+SpeedTitle.TextColor3 = Color3.fromRGB(230, 180, 255)
 SpeedTitle.Font = Enum.Font.GothamBold
 SpeedTitle.TextSize = 11
 SpeedTitle.ZIndex = 51
@@ -265,10 +288,10 @@ SpeedTitle.Parent = SpeedGuiFrame
 local SpeedBox = Instance.new("TextBox")
 SpeedBox.Size = UDim2.new(0.85, 0, 0, 26)
 SpeedBox.Position = UDim2.new(0.075, 0, 0, 28)
-SpeedBox.BackgroundColor3 = Color3.fromRGB(12, 28, 54)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(20, 10, 40)
 SpeedBox.Text = "16"
 SpeedBox.PlaceholderText = "Speed..."
-SpeedBox.TextColor3 = Color3.fromRGB(0, 220, 255)
+SpeedBox.TextColor3 = Color3.fromRGB(220, 120, 255)
 SpeedBox.Font = Enum.Font.GothamBold
 SpeedBox.TextSize = 12
 SpeedBox.ZIndex = 51
@@ -288,7 +311,7 @@ ApplySpeedBtn.Parent = SpeedGuiFrame
 Instance.new("UICorner", ApplySpeedBtn).CornerRadius = UDim.new(0, 6)
 
 local ApplySpeedGrad = Instance.new("UIGradient")
-ApplySpeedGrad.Color = BLUE_ON_GRADIENT
+ApplySpeedGrad.Color = GALAXY_ON_GRADIENT
 ApplySpeedGrad.Rotation = 90
 ApplySpeedGrad.Parent = ApplySpeedBtn
 
@@ -303,7 +326,7 @@ ApplySpeedBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- MINI-GAME: SHARK ATTACK CLICKER
+-- MINI-GAME: GALAXY SHARK ATTACK CLICKER
 --------------------------------------------------------------------------------
 local MiniGameFrame = Instance.new("Frame")
 MiniGameFrame.Size = UDim2.new(0, 320, 0, 240)
@@ -317,10 +340,10 @@ Instance.new("UICorner", MiniGameFrame).CornerRadius = UDim.new(0, 12)
 
 local MiniGameStroke = Instance.new("UIStroke", MiniGameFrame)
 MiniGameStroke.Thickness = 2
-MiniGameStroke.Color = Color3.fromRGB(80, 210, 255)
+MiniGameStroke.Color = Color3.fromRGB(180, 70, 255)
 
 local MiniGameGrad = Instance.new("UIGradient")
-MiniGameGrad.Color = FRAME_BG_GRADIENT
+MiniGameGrad.Color = GALAXY_FRAME_GRADIENT
 MiniGameGrad.Rotation = 45
 MiniGameGrad.Parent = MiniGameFrame
 
@@ -328,8 +351,8 @@ local MiniGameTitle = Instance.new("TextLabel")
 MiniGameTitle.Size = UDim2.new(1, -30, 0, 30)
 MiniGameTitle.Position = UDim2.new(0, 10, 0, 5)
 MiniGameTitle.BackgroundTransparency = 1
-MiniGameTitle.Text = "🎮 SHARK CATCHER MINI-GAME"
-MiniGameTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
+MiniGameTitle.Text = "🪐 GALAXY SHARK MINI-GAME"
+MiniGameTitle.TextColor3 = Color3.fromRGB(230, 180, 255)
 MiniGameTitle.Font = Enum.Font.GothamBold
 MiniGameTitle.TextSize = 12
 MiniGameTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -339,7 +362,7 @@ MiniGameTitle.Parent = MiniGameFrame
 local CloseMiniGame = Instance.new("TextButton")
 CloseMiniGame.Size = UDim2.new(0, 24, 0, 24)
 CloseMiniGame.Position = UDim2.new(1, -28, 0, 6)
-CloseMiniGame.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+CloseMiniGame.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
 CloseMiniGame.Text = "X"
 CloseMiniGame.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseMiniGame.Font = Enum.Font.GothamBold
@@ -353,7 +376,7 @@ ScoreLabel.Size = UDim2.new(1, 0, 0, 20)
 ScoreLabel.Position = UDim2.new(0, 0, 0, 32)
 ScoreLabel.BackgroundTransparency = 1
 ScoreLabel.Text = "Score: 0"
-ScoreLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
+ScoreLabel.TextColor3 = Color3.fromRGB(200, 120, 255)
 ScoreLabel.Font = Enum.Font.GothamBold
 ScoreLabel.TextSize = 13
 ScoreLabel.ZIndex = 61
@@ -362,7 +385,7 @@ ScoreLabel.Parent = MiniGameFrame
 local MiniGameArea = Instance.new("Frame")
 MiniGameArea.Size = UDim2.new(0.9, 0, 0.7, 0)
 MiniGameArea.Position = UDim2.new(0.05, 0, 0.24, 0)
-MiniGameArea.BackgroundColor3 = Color3.fromRGB(10, 20, 40)
+MiniGameArea.BackgroundColor3 = Color3.fromRGB(15, 8, 30)
 MiniGameArea.BorderSizePixel = 0
 MiniGameArea.ClipsDescendants = true
 MiniGameArea.ZIndex = 61
@@ -373,14 +396,14 @@ local TargetBtn = Instance.new("TextButton")
 TargetBtn.Size = UDim2.new(0, 36, 0, 36)
 TargetBtn.Position = UDim2.new(0.4, 0, 0.4, 0)
 TargetBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TargetBtn.Text = "🦈"
+TargetBtn.Text = "🚀"
 TargetBtn.TextSize = 20
 TargetBtn.ZIndex = 62
 TargetBtn.Parent = MiniGameArea
 Instance.new("UICorner", TargetBtn).CornerRadius = UDim.new(1, 0)
 
 local TargetGrad = Instance.new("UIGradient")
-TargetGrad.Color = BLUE_ON_GRADIENT
+TargetGrad.Color = GALAXY_ON_GRADIENT
 TargetGrad.Parent = TargetBtn
 
 local miniGameScore = 0
@@ -416,18 +439,18 @@ Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 14)
 
 local KeyStroke = Instance.new("UIStroke", KeyFrame)
 KeyStroke.Thickness = 2
-KeyStroke.Color = Color3.fromRGB(80, 210, 255)
+KeyStroke.Color = Color3.fromRGB(180, 70, 255)
 
 local KeyGrad = Instance.new("UIGradient")
-KeyGrad.Color = FRAME_BG_GRADIENT
+KeyGrad.Color = GALAXY_FRAME_GRADIENT
 KeyGrad.Rotation = 45
 KeyGrad.Parent = KeyFrame
 
 local KeyTitle = Instance.new("TextLabel")
 KeyTitle.Size = UDim2.new(1, 0, 0, 45)
 KeyTitle.BackgroundTransparency = 1
-KeyTitle.Text = "🦈 SHARK HUB — ACCESS CONTROL"
-KeyTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
+KeyTitle.Text = "🪐 SHARK HUB — GALAXY ACCESS"
+KeyTitle.TextColor3 = Color3.fromRGB(230, 180, 255)
 KeyTitle.Font = Enum.Font.GothamBold
 KeyTitle.TextSize = 14
 KeyTitle.ZIndex = 3
@@ -436,10 +459,10 @@ KeyTitle.Parent = KeyFrame
 local KeyBox = Instance.new("TextBox")
 KeyBox.Size = UDim2.new(0.88, 0, 0, 42)
 KeyBox.Position = UDim2.new(0.06, 0, 0, 65)
-KeyBox.BackgroundColor3 = Color3.fromRGB(12, 28, 54)
+KeyBox.BackgroundColor3 = Color3.fromRGB(20, 10, 40)
 KeyBox.Text = ""
-KeyBox.PlaceholderText = "Enter key code here..."
-KeyBox.PlaceholderColor3 = Color3.fromRGB(100, 170, 220)
+KeyBox.PlaceholderText = "Enter cosmic key here..."
+KeyBox.PlaceholderColor3 = Color3.fromRGB(150, 100, 200)
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 KeyBox.Font = Enum.Font.GothamBold
 KeyBox.TextSize = 12
@@ -460,7 +483,7 @@ SubmitBtn.Parent = KeyFrame
 Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
 
 local SubmitGrad = Instance.new("UIGradient")
-SubmitGrad.Color = BLUE_ON_GRADIENT
+SubmitGrad.Color = GALAXY_ON_GRADIENT
 SubmitGrad.Rotation = 90
 SubmitGrad.Parent = SubmitBtn
 
@@ -477,7 +500,7 @@ PuzzleChallengeBtn.Parent = KeyFrame
 Instance.new("UICorner", PuzzleChallengeBtn).CornerRadius = UDim.new(0, 8)
 
 local PuzzleGrad = Instance.new("UIGradient")
-PuzzleGrad.Color = BLUE_ON_GRADIENT
+PuzzleGrad.Color = GALAXY_ON_GRADIENT
 PuzzleGrad.Rotation = 90
 PuzzleGrad.Parent = PuzzleChallengeBtn
 
@@ -493,7 +516,7 @@ PuzzleFrame.Parent = ScreenGui
 Instance.new("UICorner", PuzzleFrame).CornerRadius = UDim.new(0, 12)
 
 local PuzzleFrameGrad = Instance.new("UIGradient")
-PuzzleFrameGrad.Color = FRAME_BG_GRADIENT
+PuzzleFrameGrad.Color = GALAXY_FRAME_GRADIENT
 PuzzleFrameGrad.Rotation = 45
 PuzzleFrameGrad.Parent = PuzzleFrame
 
@@ -501,7 +524,7 @@ local PuzzleTitle = Instance.new("TextLabel")
 PuzzleTitle.Size = UDim2.new(1, 0, 0, 40)
 PuzzleTitle.BackgroundTransparency = 1
 PuzzleTitle.Text = "🧩 PUZZLE CHALLENGE"
-PuzzleTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
+PuzzleTitle.TextColor3 = Color3.fromRGB(230, 180, 255)
 PuzzleTitle.Font = Enum.Font.GothamBold
 PuzzleTitle.TextSize = 14
 PuzzleTitle.ZIndex = 16
@@ -512,7 +535,7 @@ PuzzleQuestion.Size = UDim2.new(0.9, 0, 0, 40)
 PuzzleQuestion.Position = UDim2.new(0.05, 0, 0, 45)
 PuzzleQuestion.BackgroundTransparency = 1
 PuzzleQuestion.Text = "Solve: What is (12 x 8) + 15?"
-PuzzleQuestion.TextColor3 = Color3.fromRGB(0, 220, 255)
+PuzzleQuestion.TextColor3 = Color3.fromRGB(200, 120, 255)
 PuzzleQuestion.Font = Enum.Font.GothamMedium
 PuzzleQuestion.TextSize = 13
 PuzzleQuestion.ZIndex = 16
@@ -521,10 +544,10 @@ PuzzleQuestion.Parent = PuzzleFrame
 local PuzzleBox = Instance.new("TextBox")
 PuzzleBox.Size = UDim2.new(0.88, 0, 0, 40)
 PuzzleBox.Position = UDim2.new(0.06, 0, 0, 95)
-PuzzleBox.BackgroundColor3 = Color3.fromRGB(12, 28, 54)
+PuzzleBox.BackgroundColor3 = Color3.fromRGB(20, 10, 40)
 PuzzleBox.Text = ""
 PuzzleBox.PlaceholderText = "Enter answer here..."
-PuzzleBox.PlaceholderColor3 = Color3.fromRGB(100, 170, 220)
+PuzzleBox.PlaceholderColor3 = Color3.fromRGB(150, 100, 200)
 PuzzleBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 PuzzleBox.Font = Enum.Font.GothamBold
 PuzzleBox.TextSize = 12
@@ -545,7 +568,7 @@ SubmitPuzzleBtn.Parent = PuzzleFrame
 Instance.new("UICorner", SubmitPuzzleBtn).CornerRadius = UDim.new(0, 8)
 
 local SubmitPuzzleGrad = Instance.new("UIGradient")
-SubmitPuzzleGrad.Color = BLUE_ON_GRADIENT
+SubmitPuzzleGrad.Color = GALAXY_ON_GRADIENT
 SubmitPuzzleGrad.Rotation = 90
 SubmitPuzzleGrad.Parent = SubmitPuzzleBtn
 
@@ -562,36 +585,36 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Thickness = 2
-MainStroke.Color = Color3.fromRGB(80, 210, 255)
+MainStroke.Color = Color3.fromRGB(180, 70, 255)
 
 local MainGrad = Instance.new("UIGradient")
-MainGrad.Color = FRAME_BG_GRADIENT
+MainGrad.Color = GALAXY_FRAME_GRADIENT
 MainGrad.Rotation = 45
 MainGrad.Parent = MainFrame
 
--- Rotating Gradients
+-- Rotating Galaxy Gradients
 RunService.RenderStepped:Connect(function()
-    MainGrad.Rotation = (MainGrad.Rotation + 0.2) % 360
-    KeyGrad.Rotation = (KeyGrad.Rotation + 0.2) % 360
-    PuzzleFrameGrad.Rotation = (PuzzleFrameGrad.Rotation + 0.2) % 360
-    SpeedGuiGrad.Rotation = (SpeedGuiGrad.Rotation + 0.2) % 360
-    MiniGameGrad.Rotation = (MiniGameGrad.Rotation + 0.2) % 360
-    CircleGrad.Rotation = (CircleGrad.Rotation + 0.5) % 360
+    MainGrad.Rotation = (MainGrad.Rotation + 0.3) % 360
+    KeyGrad.Rotation = (KeyGrad.Rotation + 0.3) % 360
+    PuzzleFrameGrad.Rotation = (PuzzleFrameGrad.Rotation + 0.3) % 360
+    SpeedGuiGrad.Rotation = (SpeedGuiGrad.Rotation + 0.3) % 360
+    MiniGameGrad.Rotation = (MiniGameGrad.Rotation + 0.3) % 360
+    CircleGrad.Rotation = (CircleGrad.Rotation + 0.6) % 360
 end)
 
 local TitleBar = Instance.new("Frame")
 TitleBar.Size = UDim2.new(1, 0, 0, 52)
-TitleBar.BackgroundColor3 = Color3.fromRGB(15, 35, 70)
+TitleBar.BackgroundColor3 = Color3.fromRGB(20, 8, 42)
 TitleBar.ZIndex = 11
 TitleBar.Parent = MainFrame
 Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 16)
 
 local TitleText = Instance.new("TextLabel")
-TitleText.Size = UDim2.new(0.5, 0, 1, 0)
+TitleText.Size = UDim2.new(0.6, 0, 1, 0)
 TitleText.Position = UDim2.new(0, 18, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V3.30 — BLUE EDITION"
-TitleText.TextColor3 = Color3.fromRGB(180, 235, 255)
+TitleText.Text = "🪐 SHARK HUB V3.40 — GALAXY EDITION"
+TitleText.TextColor3 = Color3.fromRGB(230, 180, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
 TitleText.TextSize = 16
@@ -636,7 +659,7 @@ ScrollingFrame.Position = UDim2.new(0, 12, 0, 58)
 ScrollingFrame.BackgroundTransparency = 1
 ScrollingFrame.BorderSizePixel = 0
 ScrollingFrame.ScrollBarThickness = 5
-ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 180, 255)
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(180, 70, 255)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollingFrame.ZIndex = 11
 ScrollingFrame.Parent = MainFrame
@@ -651,7 +674,7 @@ UIGridLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIGridLayout.AbsoluteContentSize.Y + 20)
 end)
 
-local function CreateBlueButton(text, order, initialActive)
+local function CreateGalaxyButton(text, order, initialActive)
     local btn = Instance.new("TextButton")
     btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = text
@@ -664,13 +687,13 @@ local function CreateBlueButton(text, order, initialActive)
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
     
     local grad = Instance.new("UIGradient")
-    grad.Color = initialActive and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    grad.Color = initialActive and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
     grad.Rotation = 90
     grad.Parent = btn
 
     local stroke = Instance.new("UIStroke", btn)
     stroke.Thickness = 1.5
-    stroke.Color = initialActive and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    stroke.Color = initialActive and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     btn.MouseEnter:Connect(function()
         TweenService:Create(stroke, TweenInfo.new(0.2), {Thickness = 2.5}):Play()
@@ -690,8 +713,8 @@ SubmitBtn.MouseButton1Click:Connect(function()
         MainFrame.Visible = true
     else
         KeyBox.Text = ""
-        KeyBox.PlaceholderText = "Invalid Key!"
-        task.delay(1.5, function() KeyBox.PlaceholderText = "Enter key code here..." end)
+        KeyBox.PlaceholderText = "Invalid Cosmic Key!"
+        task.delay(1.5, function() KeyBox.PlaceholderText = "Enter cosmic key here..." end)
     end
 end)
 
@@ -715,30 +738,31 @@ SubmitPuzzleBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- FULL BUTTON MATRIX CREATION
+-- MATRIX BUTTONS
 --------------------------------------------------------------------------------
-local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateBlueButton("🤖 AI BATTLE (THE_RAKE): OFF", 1, false)
-local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateBlueButton("⚔️ Fast Spam Clicker: OFF", 2, false)
-local BringBossBtn, BringBossStroke, BringBossGrad = CreateBlueButton("🧲 Bring Boss To Player: OFF", 3, false)
-local HitboxBtn, HitboxStroke, HitboxGrad = CreateBlueButton("📦 Expand Target Hitbox: OFF", 4, false)
-local SpeedBtn, SpeedStroke, SpeedGrad = CreateBlueButton("⚡ Speed Boost (50 WalkSpeed): OFF", 5, false)
-local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateBlueButton("🎯 Trigger Bot: OFF", 6, false)
-local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateBlueButton("🎁 Auto Pickup Items: OFF", 7, false)
-local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateBlueButton("💥 FORCE DROP 1000%: OFF", 8, false)
+local TriggerCalamityBtn, _, TriggerCalamityGrad = CreateGalaxyButton("⚡ TRIGGER CALAMITY MODE", 1, false)
+local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateGalaxyButton("🤖 AI BATTLE (THE_RAKE): OFF", 2, false)
+local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateGalaxyButton("⚔️ Fast Spam Clicker: OFF", 3, false)
+local BringBossBtn, BringBossStroke, BringBossGrad = CreateGalaxyButton("🧲 Bring Boss To Player: OFF", 4, false)
+local HitboxBtn, HitboxStroke, HitboxGrad = CreateGalaxyButton("📦 Expand Target Hitbox: OFF", 5, false)
+local SpeedBtn, SpeedStroke, SpeedGrad = CreateGalaxyButton("⚡ Speed Boost (50 WalkSpeed): OFF", 6, false)
+local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateGalaxyButton("🎯 Trigger Bot: OFF", 7, false)
+local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateGalaxyButton("🎁 Auto Pickup Items: OFF", 8, false)
+local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateGalaxyButton("💥 FORCE DROP 1000%: OFF", 9, false)
 
-local ToolRenamerBtn, _, ToolRenamerGrad = CreateBlueButton("✏️ RENAME ALL TOOLS", 9, false)
-local MiniGameBtn, _, MiniGameBtnGrad = CreateBlueButton("🎮 OPEN MINI-GAME", 10, false)
+local ToolRenamerBtn, _, ToolRenamerGrad = CreateGalaxyButton("✏️ RENAME ALL TOOLS", 10, false)
+local MiniGameBtn, _, MiniGameBtnGrad = CreateGalaxyButton("🎮 OPEN MINI-GAME", 11, false)
 
 -- LUCK BOOST BUTTONS
-local Luck250Btn, Luck250Stroke, Luck250Grad = CreateBlueButton("🍀 250% LUCK BOOST: OFF", 11, false)
-local Luck500Btn, Luck500Stroke, Luck500Grad = CreateBlueButton("🔥 500% LUCK BOOST: OFF", 12, false)
-local Luck750Btn, Luck750Stroke, Luck750Grad = CreateBlueButton("💎 750% LUCK BOOST: OFF", 13, false)
-local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateBlueButton("⚡ 1000% LUCKKYYY: OFF", 14, false)
+local Luck250Btn, Luck250Stroke, Luck250Grad = CreateGalaxyButton("🍀 250% LUCK BOOST: OFF", 12, false)
+local Luck500Btn, Luck500Stroke, Luck500Grad = CreateGalaxyButton("🔥 500% LUCK BOOST: OFF", 13, false)
+local Luck750Btn, Luck750Stroke, Luck750Grad = CreateGalaxyButton("💎 750% LUCK BOOST: OFF", 14, false)
+local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateGalaxyButton("⚡ 1000% LUCKKYYY: OFF", 15, false)
 
-local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 15, false)
-local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 16, false)
+local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateGalaxyButton("🚨 Auto Escape (20% HP): OFF", 16, false)
+local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateGalaxyButton("🧲 Bring Rakoof: OFF", 17, false)
 
--- Toggle Menu Keybinds (RightControl toggles menu, X toggles Top Shark Icon)
+-- Toggle Menu Keybinds
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe then
         if input.KeyCode == TOGGLE_KEY and MainFrame then
@@ -759,12 +783,26 @@ end)
 -- FEATURE LOGIC
 --------------------------------------------------------------------------------
 
+-- Trigger Calamity Mode Button
+TriggerCalamityBtn.MouseButton1Click:Connect(function()
+    local count = triggerCalamityInsideRake()
+    if count > 0 then
+        TriggerCalamityBtn.Text = "⚡ ACTIVATED (" .. tostring(count) .. " TRIGGERED)"
+    else
+        TriggerCalamityBtn.Text = "⚠️ CALAMITY NOT FOUND IN RAKE"
+    end
+    
+    task.delay(2.5, function()
+        TriggerCalamityBtn.Text = "⚡ TRIGGER CALAMITY MODE"
+    end)
+end)
+
 -- AI Battle Mode targeting THE_RAKE & trigger CalamityMAIN inside THE_RAKE
 AIBattleBtn.MouseButton1Click:Connect(function()
     AI_BATTLE_ENABLED = not AI_BATTLE_ENABLED
     AIBattleBtn.Text = AI_BATTLE_ENABLED and "🤖 AI BATTLE (THE_RAKE): ON" or "🤖 AI BATTLE (THE_RAKE): OFF"
-    AIBattleGrad.Color = AI_BATTLE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    AIBattleStroke.Color = AI_BATTLE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    AIBattleGrad.Color = AI_BATTLE_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    AIBattleStroke.Color = AI_BATTLE_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if AI_BATTLE_ENABLED then
         enableContinuousNoclip()
@@ -794,8 +832,8 @@ end)
 AutoAttackBtn.MouseButton1Click:Connect(function()
     AUTO_ATTACK_ENABLED = not AUTO_ATTACK_ENABLED
     AutoAttackBtn.Text = AUTO_ATTACK_ENABLED and "⚔️ Fast Spam Clicker: ON" or "⚔️ Fast Spam Clicker: OFF"
-    AutoAttackGrad.Color = AUTO_ATTACK_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    AutoAttackStroke.Color = AUTO_ATTACK_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    AutoAttackGrad.Color = AUTO_ATTACK_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    AutoAttackStroke.Color = AUTO_ATTACK_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if AUTO_ATTACK_ENABLED then
         attackLoop = RunService.RenderStepped:Connect(function() executeSpamClick() end)
@@ -807,8 +845,8 @@ end)
 BringBossBtn.MouseButton1Click:Connect(function()
     BRING_BOSS_ENABLED = not BRING_BOSS_ENABLED
     BringBossBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring Boss: ON" or "🧲 Bring Boss To Player: OFF"
-    BringBossGrad.Color = BRING_BOSS_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    BringBossStroke.Color = BRING_BOSS_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    BringBossGrad.Color = BRING_BOSS_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    BringBossStroke.Color = BRING_BOSS_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if BRING_BOSS_ENABLED then
         bringLoop = RunService.Heartbeat:Connect(function()
@@ -828,8 +866,8 @@ end)
 HitboxBtn.MouseButton1Click:Connect(function()
     EXPAND_HITBOX_ENABLED = not EXPAND_HITBOX_ENABLED
     HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand Hitbox: ON" or "📦 Expand Target Hitbox: OFF"
-    HitboxGrad.Color = EXPAND_HITBOX_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    HitboxStroke.Color = EXPAND_HITBOX_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    HitboxGrad.Color = EXPAND_HITBOX_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    HitboxStroke.Color = EXPAND_HITBOX_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if EXPAND_HITBOX_ENABLED then
         hitboxLoop = RunService.Heartbeat:Connect(function()
@@ -846,8 +884,8 @@ end)
 SpeedBtn.MouseButton1Click:Connect(function()
     SPEED_BOOST_ENABLED = not SPEED_BOOST_ENABLED
     SpeedBtn.Text = SPEED_BOOST_ENABLED and "⚡ Speed Boost: ON" or "⚡ Speed Boost (50 WalkSpeed): OFF"
-    SpeedGrad.Color = SPEED_BOOST_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    SpeedStroke.Color = SPEED_BOOST_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    SpeedGrad.Color = SPEED_BOOST_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    SpeedStroke.Color = SPEED_BOOST_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     local char = LocalPlayer.Character
     if char and char:FindFirstChildOfClass("Humanoid") then
@@ -858,8 +896,8 @@ end)
 TriggerBotBtn.MouseButton1Click:Connect(function()
     TRIGGERBOT_ENABLED = not TRIGGERBOT_ENABLED
     TriggerBotBtn.Text = TRIGGERBOT_ENABLED and "🎯 Trigger Bot: ON" or "🎯 Trigger Bot: OFF"
-    TriggerBotGrad.Color = TRIGGERBOT_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    TriggerBotStroke.Color = TRIGGERBOT_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    TriggerBotGrad.Color = TRIGGERBOT_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    TriggerBotStroke.Color = TRIGGERBOT_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if TRIGGERBOT_ENABLED then
         triggerBotConnection = RunService.Heartbeat:Connect(function()
@@ -881,8 +919,8 @@ end)
 AutoPickupBtn.MouseButton1Click:Connect(function()
     AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
     AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Auto Pickup: ON" or "🎁 Auto Pickup Items: OFF"
-    AutoPickupGrad.Color = AUTO_PICKUP_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    AutoPickupStroke.Color = AUTO_PICKUP_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    AutoPickupGrad.Color = AUTO_PICKUP_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    AutoPickupStroke.Color = AUTO_PICKUP_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if AUTO_PICKUP_ENABLED then
         pickupLoop = RunService.Heartbeat:Connect(function()
@@ -911,8 +949,8 @@ end)
 ForceDropBtn.MouseButton1Click:Connect(function()
     FORCE_DROP_ENABLED = not FORCE_DROP_ENABLED
     ForceDropBtn.Text = FORCE_DROP_ENABLED and "💥 FORCE DROP 1000%: ON" or "💥 FORCE DROP 1000%: OFF"
-    ForceDropGrad.Color = FORCE_DROP_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    ForceDropStroke.Color = FORCE_DROP_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    ForceDropGrad.Color = FORCE_DROP_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    ForceDropStroke.Color = FORCE_DROP_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
     
     if FORCE_DROP_ENABLED then
         forceDropLoop = task.spawn(function()
@@ -965,8 +1003,8 @@ end)
 Luck250Btn.MouseButton1Click:Connect(function()
     LUCK_250_ENABLED = not LUCK_250_ENABLED
     Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% LUCK BOOST: ON" or "🍀 250% LUCK BOOST: OFF"
-    Luck250Grad.Color = LUCK_250_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    Luck250Stroke.Color = LUCK_250_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    Luck250Grad.Color = LUCK_250_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    Luck250Stroke.Color = LUCK_250_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if LUCK_250_ENABLED then
         luck250Loop = task.spawn(function()
@@ -983,8 +1021,8 @@ end)
 Luck500Btn.MouseButton1Click:Connect(function()
     LUCK_500_ENABLED = not LUCK_500_ENABLED
     Luck500Btn.Text = LUCK_500_ENABLED and "🔥 500% LUCK BOOST: ON" or "🔥 500% LUCK BOOST: OFF"
-    Luck500Grad.Color = LUCK_500_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    Luck500Stroke.Color = LUCK_500_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    Luck500Grad.Color = LUCK_500_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    Luck500Stroke.Color = LUCK_500_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if LUCK_500_ENABLED then
         luck500Loop = task.spawn(function()
@@ -1001,8 +1039,8 @@ end)
 Luck750Btn.MouseButton1Click:Connect(function()
     LUCK_750_ENABLED = not LUCK_750_ENABLED
     Luck750Btn.Text = LUCK_750_ENABLED and "💎 750% LUCK BOOST: ON" or "💎 750% LUCK BOOST: OFF"
-    Luck750Grad.Color = LUCK_750_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    Luck750Stroke.Color = LUCK_750_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    Luck750Grad.Color = LUCK_750_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    Luck750Stroke.Color = LUCK_750_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if LUCK_750_ENABLED then
         luck750Loop = task.spawn(function()
@@ -1019,8 +1057,8 @@ end)
 Luck1000Btn.MouseButton1Click:Connect(function()
     LUCK_1000_ENABLED = not LUCK_1000_ENABLED
     Luck1000Btn.Text = LUCK_1000_ENABLED and "⚡ 1000% LUCKKYYY: ON" or "⚡ 1000% LUCKKYYY: OFF"
-    Luck1000Grad.Color = LUCK_1000_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    Luck1000Stroke.Color = LUCK_1000_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    Luck1000Grad.Color = LUCK_1000_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    Luck1000Stroke.Color = LUCK_1000_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if LUCK_1000_ENABLED then
         luck1000Loop = task.spawn(function()
@@ -1037,8 +1075,8 @@ end)
 AutoEscapeBtn.MouseButton1Click:Connect(function()
     AUTO_ESCAPE_ENABLED = not AUTO_ESCAPE_ENABLED
     AutoEscapeBtn.Text = AUTO_ESCAPE_ENABLED and "🚨 Auto Escape: ON" or "🚨 Auto Escape (20% HP): OFF"
-    AutoEscapeGrad.Color = AUTO_ESCAPE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    AutoEscapeStroke.Color = AUTO_ESCAPE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    AutoEscapeGrad.Color = AUTO_ESCAPE_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    AutoEscapeStroke.Color = AUTO_ESCAPE_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if AUTO_ESCAPE_ENABLED then
         escapeConnection = RunService.Heartbeat:Connect(function()
@@ -1058,8 +1096,8 @@ end)
 BringRakoofBtn.MouseButton1Click:Connect(function()
     BRING_RAKOOF_ENABLED = not BRING_RAKOOF_ENABLED
     BringRakoofBtn.Text = BRING_RAKOOF_ENABLED and "🧲 Bring Rakoof: ON" or "🧲 Bring Rakoof: OFF"
-    BringRakoofGrad.Color = BRING_RAKOOF_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    BringRakoofStroke.Color = BRING_RAKOOF_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+    BringRakoofGrad.Color = BRING_RAKOOF_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    BringRakoofStroke.Color = BRING_RAKOOF_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
     if BRING_RAKOOF_ENABLED then
         bringRakoofLoop = RunService.Heartbeat:Connect(function()
