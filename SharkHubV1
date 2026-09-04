@@ -81,7 +81,8 @@ local luck250Loop, luck500Loop, luck750Loop, luck1000Loop
 local TARGET_ITEMS = {
     "GoldenApple", "LegendaryEnergy", "IgnitionFlame", 
     "SnowFlakes", "CorruptedHalo", "StrangeBar", "BurnedBone",
-    "Penguin", "PenguinPart", "PenguinParts", "Mesh", "Meshes"
+    "Penguin", "PenguinPart", "PenguinParts", "Mesh", "Meshes",
+    "CrucibleSword", "Imposta", "NullBlock", "TrainerCap"
 }
 
 -- Utility: Find Item Drop / Remotes
