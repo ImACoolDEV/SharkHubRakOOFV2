@@ -1,4 +1,4 @@
--- Shark Hub V3.40 | Galaxy Edition (Calamity Trigger Included)
+-- Shark Hub V3.45 | Galaxy Edition (MainCalamity + GiftRain/LootItem Fixed + Spin 30x Added)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -43,7 +43,7 @@ local IS_KEYLESS_USER = (LocalPlayer.UserId == 9603761866 or LocalPlayer.Name ==
 
 -- State & Key Variables
 local TARGET_NAME = "DOOFmmy"
-local RAKE_NAME = "THE_RAKE"
+local RAKE_NAME = "The_Rake"
 
 local VALID_KEYS = {
     ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
@@ -63,6 +63,7 @@ local TRIGGERBOT_ENABLED = false
 local AUTO_ESCAPE_ENABLED = false
 local BRING_RAKOOF_ENABLED = false
 local FORCE_DROP_ENABLED = false
+local SPIN_30_ENABLED = false
 
 -- Luck Boost States
 local LUCK_250_ENABLED = false
@@ -74,7 +75,7 @@ local TOGGLE_KEY = Enum.KeyCode.RightControl
 local QUICK_TOGGLE_KEY = Enum.KeyCode.X 
 
 -- Connection Variables
-local aiBattleLoop, attackLoop, bringLoop, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, forceDropLoop
+local aiBattleLoop, attackLoop, bringLoop, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, forceDropLoop, spin30Loop
 local luck250Loop, luck500Loop, luck750Loop, luck1000Loop
 
 local TARGET_ITEMS = {
@@ -83,6 +84,7 @@ local TARGET_ITEMS = {
     "Penguin", "PenguinPart", "PenguinParts", "Mesh", "Meshes"
 }
 
+-- Utility: Find Item Drop / Remotes
 local function findItemDropRemote()
     local itemDrop = ReplicatedStorage:FindFirstChild("ItemDrop", true) or Workspace:FindFirstChild("ItemDrop", true)
     if itemDrop and (itemDrop:IsA("RemoteEvent") or itemDrop:IsA("UnreliableRemoteEvent")) then
@@ -100,7 +102,8 @@ local function findItemDropRemote()
     return nil
 end
 
-local function applyLuckMultiplier(multiplier)
+-- Trigger GiftRain and LootItem across workspace and ReplicatedStorage
+local function triggerGiftRainAndLoot(multiplier)
     local remote = findItemDropRemote()
     if remote then
         pcall(function()
@@ -108,6 +111,34 @@ local function applyLuckMultiplier(multiplier)
             remote:FireServer({Luck = multiplier, Boost = true})
         end)
     end
+
+    for _, obj in ipairs(game:GetDescendants()) do
+        if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("BindableEvent") then
+            local nameLower = string.lower(obj.Name)
+            if nameLower == "giftrain" or string.find(nameLower, "giftrain") then
+                pcall(function()
+                    if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
+                end)
+            elseif nameLower == "lootitem" or string.find(nameLower, "lootitem") then
+                pcall(function()
+                    if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
+                end)
+            end
+        end
+    end
+end
+
+-- Helper to find Wheel/Crate Remote for Spin 30x
+local function findSpinRemote()
+    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+        if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
+            local nameLower = string.lower(obj.Name)
+            if string.find(nameLower, "spin") or string.find(nameLower, "crate") or string.find(nameLower, "wheel") or string.find(nameLower, "roll") then
+                return obj
+            end
+        end
+    end
+    return nil
 end
 
 local function findTargetModel(query)
@@ -139,7 +170,6 @@ local function executeSpamClick()
     end
 end
 
--- Strictly searches inside THE_RAKE model for CalamityMAIN to trigger it
 local function triggerCalamityInsideRake()
     local rakeModel = nil
     for _, obj in ipairs(Workspace:GetDescendants()) do
@@ -150,14 +180,14 @@ local function triggerCalamityInsideRake()
     end
 
     if not rakeModel then
-        warn("THE_RAKE model not found in Workspace!")
+        warn("The_Rake model not found in Workspace!")
         return 0
     end
 
     local triggeredCount = 0
 
     for _, target in ipairs(rakeModel:GetDescendants()) do
-        if target.Name == "CalamityMAIN" then
+        if target.Name == "MainCalamity" or target.Name == "CalamityMAIN" then
             triggeredCount = triggeredCount + 1
             
             if target:IsA("RemoteEvent") or target:IsA("UnreliableRemoteEvent") then
@@ -230,7 +260,7 @@ local GALAXY_FRAME_GRADIENT = ColorSequence.new({
 })
 
 --------------------------------------------------------------------------------
--- TOP SHARK CIRCLE BUTTON (TOGGLED WITH X KEY)
+-- TOP SHARK CIRCLE BUTTON
 --------------------------------------------------------------------------------
 local TopCircleBtn = Instance.new("TextButton")
 TopCircleBtn.Name = "TopSharkCircle"
@@ -254,7 +284,7 @@ CircleGrad.Rotation = 45
 CircleGrad.Parent = TopCircleBtn
 
 --------------------------------------------------------------------------------
--- WALKSPEED CHANGER GUI
+-- WALKSPEED CHANGER GUI (DRAGGABLE)
 --------------------------------------------------------------------------------
 local SpeedGuiFrame = Instance.new("Frame")
 SpeedGuiFrame.Size = UDim2.new(0, 180, 0, 90)
@@ -284,6 +314,33 @@ SpeedTitle.Font = Enum.Font.GothamBold
 SpeedTitle.TextSize = 11
 SpeedTitle.ZIndex = 51
 SpeedTitle.Parent = SpeedGuiFrame
+
+-- Dragging Logic for Speed Changer
+local speedDragging, speedDragInput, speedDragStart, speedStartPos
+
+SpeedTitle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        speedDragging = true
+        speedDragStart = input.Position
+        speedStartPos = SpeedGuiFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then speedDragging = false end
+        end)
+    end
+end)
+
+SpeedTitle.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        speedDragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == speedDragInput and speedDragging then
+        local delta = input.Position - speedDragStart
+        SpeedGuiFrame.Position = UDim2.new(speedStartPos.X.Scale, speedStartPos.X.Offset + delta.X, speedStartPos.Y.Scale, speedStartPos.Y.Offset + delta.Y)
+    end
+end)
 
 local SpeedBox = Instance.new("TextBox")
 SpeedBox.Size = UDim2.new(0.85, 0, 0, 26)
@@ -613,7 +670,7 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(0.6, 0, 1, 0)
 TitleText.Position = UDim2.new(0, 18, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🪐 SHARK HUB V3.40 — GALAXY EDITION"
+TitleText.Text = "🪐 SHARK HUB V3.45 — GALAXY EDITION"
 TitleText.TextColor3 = Color3.fromRGB(230, 180, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
@@ -627,7 +684,7 @@ if IS_KEYLESS_USER then
     MainFrame.Visible = true
 end
 
--- Dragging Logic
+-- Dragging Logic for Main Window
 local dragging, dragInput, dragStart, startPos
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -741,7 +798,7 @@ end)
 -- MATRIX BUTTONS
 --------------------------------------------------------------------------------
 local TriggerCalamityBtn, _, TriggerCalamityGrad = CreateGalaxyButton("⚡ TRIGGER CALAMITY MODE", 1, false)
-local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateGalaxyButton("🤖 AI BATTLE (THE_RAKE): OFF", 2, false)
+local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateGalaxyButton("🤖 AI BATTLE (The_Rake): OFF", 2, false)
 local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateGalaxyButton("⚔️ Fast Spam Clicker: OFF", 3, false)
 local BringBossBtn, BringBossStroke, BringBossGrad = CreateGalaxyButton("🧲 Bring Boss To Player: OFF", 4, false)
 local HitboxBtn, HitboxStroke, HitboxGrad = CreateGalaxyButton("📦 Expand Target Hitbox: OFF", 5, false)
@@ -750,17 +807,18 @@ local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateGalaxyButton("🎯
 local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateGalaxyButton("🎁 Auto Pickup Items: OFF", 8, false)
 local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateGalaxyButton("💥 FORCE DROP 1000%: OFF", 9, false)
 
-local ToolRenamerBtn, _, ToolRenamerGrad = CreateGalaxyButton("✏️ RENAME ALL TOOLS", 10, false)
-local MiniGameBtn, _, MiniGameBtnGrad = CreateGalaxyButton("🎮 OPEN MINI-GAME", 11, false)
+local Spin30Btn, Spin30Stroke, Spin30Grad = CreateGalaxyButton("🎰 SPIN 30x: OFF", 10, false)
 
--- LUCK BOOST BUTTONS
-local Luck250Btn, Luck250Stroke, Luck250Grad = CreateGalaxyButton("🍀 250% LUCK BOOST: OFF", 12, false)
-local Luck500Btn, Luck500Stroke, Luck500Grad = CreateGalaxyButton("🔥 500% LUCK BOOST: OFF", 13, false)
-local Luck750Btn, Luck750Stroke, Luck750Grad = CreateGalaxyButton("💎 750% LUCK BOOST: OFF", 14, false)
-local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateGalaxyButton("⚡ 1000% LUCKKYYY: OFF", 15, false)
+local ToolRenamerBtn, _, ToolRenamerGrad = CreateGalaxyButton("✏️ RENAME ALL TOOLS", 11, false)
+local MiniGameBtn, _, MiniGameBtnGrad = CreateGalaxyButton("🎮 OPEN MINI-GAME", 12, false)
 
-local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateGalaxyButton("🚨 Auto Escape (20% HP): OFF", 16, false)
-local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateGalaxyButton("🧲 Bring Rakoof: OFF", 17, false)
+local Luck250Btn, Luck250Stroke, Luck250Grad = CreateGalaxyButton("🍀 250% LUCK BOOST: OFF", 13, false)
+local Luck500Btn, Luck500Stroke, Luck500Grad = CreateGalaxyButton("🔥 500% LUCK BOOST: OFF", 14, false)
+local Luck750Btn, Luck750Stroke, Luck750Grad = CreateGalaxyButton("💎 750% LUCK BOOST: OFF", 15, false)
+local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateGalaxyButton("⚡ 1000% LUCKKYYY: OFF", 16, false)
+
+local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateGalaxyButton("🚨 Auto Escape (20% HP): OFF", 17, false)
+local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateGalaxyButton("🧲 Bring Rakoof: OFF", 18, false)
 
 -- Toggle Menu Keybinds
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -783,13 +841,12 @@ end)
 -- FEATURE LOGIC
 --------------------------------------------------------------------------------
 
--- Trigger Calamity Mode Button
 TriggerCalamityBtn.MouseButton1Click:Connect(function()
     local count = triggerCalamityInsideRake()
     if count > 0 then
         TriggerCalamityBtn.Text = "⚡ ACTIVATED (" .. tostring(count) .. " TRIGGERED)"
     else
-        TriggerCalamityBtn.Text = "⚠️ CALAMITY NOT FOUND IN RAKE"
+        TriggerCalamityBtn.Text = "⚠️ MAIN CALAMITY NOT FOUND IN RAKE"
     end
     
     task.delay(2.5, function()
@@ -797,10 +854,9 @@ TriggerCalamityBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- AI Battle Mode targeting THE_RAKE & trigger CalamityMAIN inside THE_RAKE
 AIBattleBtn.MouseButton1Click:Connect(function()
     AI_BATTLE_ENABLED = not AI_BATTLE_ENABLED
-    AIBattleBtn.Text = AI_BATTLE_ENABLED and "🤖 AI BATTLE (THE_RAKE): ON" or "🤖 AI BATTLE (THE_RAKE): OFF"
+    AIBattleBtn.Text = AI_BATTLE_ENABLED and "🤖 AI BATTLE (The_Rake): ON" or "🤖 AI BATTLE (The_Rake): OFF"
     AIBattleGrad.Color = AI_BATTLE_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
     AIBattleStroke.Color = AI_BATTLE_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
@@ -972,6 +1028,32 @@ ForceDropBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+Spin30Btn.MouseButton1Click:Connect(function()
+    SPIN_30_ENABLED = not SPIN_30_ENABLED
+    Spin30Btn.Text = SPIN_30_ENABLED and "🎰 SPIN 30x: ON" or "🎰 SPIN 30x: OFF"
+    Spin30Grad.Color = SPIN_30_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
+    Spin30Stroke.Color = SPIN_30_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
+
+    if SPIN_30_ENABLED then
+        spin30Loop = task.spawn(function()
+            while SPIN_30_ENABLED do
+                local spinRemote = findSpinRemote()
+                if spinRemote then
+                    pcall(function()
+                        for _ = 1, 30 do
+                            spinRemote:FireServer("Spin")
+                            spinRemote:FireServer({Amount = 1})
+                        end
+                    end)
+                end
+                task.wait(0.3)
+            end
+        end)
+    else
+        if spin30Loop then task.cancel(spin30Loop) spin30Loop = nil end
+    end
+end)
+
 ToolRenamerBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -997,9 +1079,6 @@ MiniGameBtn.MouseButton1Click:Connect(function()
     moveTarget()
 end)
 
---------------------------------------------------------------------------------
--- LUCK BOOST TOGGLE LOGIC
---------------------------------------------------------------------------------
 Luck250Btn.MouseButton1Click:Connect(function()
     LUCK_250_ENABLED = not LUCK_250_ENABLED
     Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% LUCK BOOST: ON" or "🍀 250% LUCK BOOST: OFF"
@@ -1009,7 +1088,7 @@ Luck250Btn.MouseButton1Click:Connect(function()
     if LUCK_250_ENABLED then
         luck250Loop = task.spawn(function()
             while LUCK_250_ENABLED do
-                applyLuckMultiplier(2.5)
+                triggerGiftRainAndLoot(2.5)
                 task.wait(0.2)
             end
         end)
@@ -1027,7 +1106,7 @@ Luck500Btn.MouseButton1Click:Connect(function()
     if LUCK_500_ENABLED then
         luck500Loop = task.spawn(function()
             while LUCK_500_ENABLED do
-                applyLuckMultiplier(5.0)
+                triggerGiftRainAndLoot(5.0)
                 task.wait(0.2)
             end
         end)
@@ -1045,7 +1124,7 @@ Luck750Btn.MouseButton1Click:Connect(function()
     if LUCK_750_ENABLED then
         luck750Loop = task.spawn(function()
             while LUCK_750_ENABLED do
-                applyLuckMultiplier(7.5)
+                triggerGiftRainAndLoot(7.5)
                 task.wait(0.2)
             end
         end)
@@ -1063,7 +1142,7 @@ Luck1000Btn.MouseButton1Click:Connect(function()
     if LUCK_1000_ENABLED then
         luck1000Loop = task.spawn(function()
             while LUCK_1000_ENABLED do
-                applyLuckMultiplier(10.0)
+                triggerGiftRainAndLoot(10.0)
                 task.wait(0.1)
             end
         end)
