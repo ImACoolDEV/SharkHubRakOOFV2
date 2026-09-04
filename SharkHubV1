@@ -1,4 +1,4 @@
--- Shark Hub V3.45 | Galaxy Edition (MainCalamity + GiftRain/LootItem Fixed + Spin 30x Added)[cite: 5]
+-- Shark Hub V3.45 | Galaxy Edition (MainCalamity + GiftRain/LootItem Fixed + Spin 30x Added)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -49,8 +49,7 @@ local VALID_KEYS = {
     ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
     ["SHARK-HUB-VIP-2026-KEY99"] = true,
     ["SHARK-PUZZLE-SOLVED-KEY88"] = true,
-    ["ALPHA-PREMIUM-ACCESS-7731"] = true,
-    ["Trebys-Best-Friend-Treb919"] = true,
+    ["ALPHA-PREMIUM-ACCESS-7731"] = true
 }
 
 -- States
@@ -104,7 +103,6 @@ local function findItemDropRemote()
     return nil
 end
 
--- Modified: Trigger GiftRain and Loot for world/drops without applying Luck directly to LocalPlayer
 local function triggerGiftRainAndLoot(multiplier)
     for _, obj in ipairs(game:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("BindableEvent") then
@@ -122,7 +120,6 @@ local function triggerGiftRainAndLoot(multiplier)
     end
 end
 
--- Helper to find Wheel/Crate Remote for Spin 30x
 local function findSpinRemote()
     for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
@@ -278,7 +275,7 @@ CircleGrad.Rotation = 45
 CircleGrad.Parent = TopCircleBtn
 
 --------------------------------------------------------------------------------
--- WALKSPEED CHANGER GUI (DRAGGABLE)
+-- WALKSPEED CHANGER GUI
 --------------------------------------------------------------------------------
 local SpeedGuiFrame = Instance.new("Frame")
 SpeedGuiFrame.Size = UDim2.new(0, 180, 0, 90)
@@ -309,7 +306,6 @@ SpeedTitle.TextSize = 11
 SpeedTitle.ZIndex = 51
 SpeedTitle.Parent = SpeedGuiFrame
 
--- Dragging Logic for Speed Changer
 local speedDragging, speedDragInput, speedDragStart, speedStartPos
 
 SpeedTitle.InputBegan:Connect(function(input)
@@ -643,7 +639,6 @@ MainGrad.Color = GALAXY_FRAME_GRADIENT
 MainGrad.Rotation = 45
 MainGrad.Parent = MainFrame
 
--- Rotating Galaxy Gradients
 RunService.RenderStepped:Connect(function()
     MainGrad.Rotation = (MainGrad.Rotation + 0.3) % 360
     KeyGrad.Rotation = (KeyGrad.Rotation + 0.3) % 360
@@ -678,7 +673,6 @@ if IS_KEYLESS_USER then
     MainFrame.Visible = true
 end
 
--- Dragging Logic for Main Window
 local dragging, dragInput, dragStart, startPos
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -756,7 +750,6 @@ local function CreateGalaxyButton(text, order, initialActive)
     return btn, stroke, grad
 end
 
--- Key & Puzzle Actions
 SubmitBtn.MouseButton1Click:Connect(function()
     if VALID_KEYS[KeyBox.Text] then
         KeyFrame:Destroy()
@@ -814,7 +807,6 @@ local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateGalaxyButton("⚡ 1000% 
 local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateGalaxyButton("🚨 Auto Escape (20% HP): OFF", 17, false)
 local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateGalaxyButton("🧲 Bring Rakoof: OFF", 18, false)
 
--- Toggle Menu Keybinds
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe then
         if input.KeyCode == TOGGLE_KEY and MainFrame then
@@ -1185,4 +1177,74 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
     else
         if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
     end
+end)
+
+--------------------------------------------------------------------------------
+-- HYPER-RELIABLE JUGGERNAUT BATON MODIFIER LOOP (TREBTREBALT3)
+--------------------------------------------------------------------------------
+local TARGET_PLAYER_NAME = "trebtrebalt3"
+
+local function applyValueModifications(container)
+    if not container then return end
+
+    -- 1. Scan direct Attributes on the tool
+    for _, attrName in ipairs({"Damage", "damage", "Cooldown", "cooldown", "CooldownTime", "AttackDelay"}) do
+        if container:GetAttribute(attrName) ~= nil then
+            if string.find(string.lower(attrName), "damage") then
+                container:SetAttribute(attrName, 10000)
+            else
+                container:SetAttribute(attrName, 0.0001)
+            end
+        end
+    end
+
+    -- 2. Deep scan descendants for Configuration/Value objects and ModuleScripts
+    for _, obj in ipairs(container:GetDescendants()) do
+        local nameLower = string.lower(obj.Name)
+
+        if obj:IsA("ValueBase") then
+            if string.find(nameLower, "damage") then
+                if obj.Value ~= 10000 then obj.Value = 10000 end
+            elseif string.find(nameLower, "cooldown") or string.find(nameLower, "delay") or string.find(nameLower, "wait") then
+                if obj.Value ~= 0.0001 then obj.Value = 0.0001 end
+            end
+        elseif obj:IsA("ModuleScript") then
+            pcall(function()
+                local loaded = require(obj)
+                if type(loaded) == "table" then
+                    for k, _ in pairs(loaded) do
+                        local kLower = string.lower(tostring(k))
+                        if string.find(kLower, "damage") then
+                            rawset(loaded, k, 10000)
+                        elseif string.find(kLower, "cooldown") or string.find(kLower, "delay") then
+                            rawset(loaded, k, 0.0001)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end
+
+local function modifyJuggernautBaton()
+    local targetPlayer = Players:FindFirstChild(TARGET_PLAYER_NAME) or LocalPlayer
+    if not targetPlayer then return end
+
+    local backpack = targetPlayer:FindFirstChild("Backpack")
+    local character = targetPlayer.Character
+
+    local containers = {backpack, character}
+    for _, parent in ipairs(containers) do
+        if parent then
+            for _, item in ipairs(parent:GetChildren()) do
+                if item:IsA("Tool") and string.find(string.lower(item.Name), "juggernaut") then
+                    applyValueModifications(item)
+                end
+            end
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    pcall(modifyJuggernautBaton)
 end)
