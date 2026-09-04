@@ -470,6 +470,143 @@ end)
 --------------------------------------------------------------------------------
 -- MINI GAMES ENGINE
 --------------------------------------------------------------------------------
+-- Mini Game 3: AI Tournament Brawl (Declared First to fix reference issues)
+local TournamentFrame = Instance.new("Frame")
+TournamentFrame.Size = UDim2.new(0, 380, 0, 280)
+TournamentFrame.Position = UDim2.new(0.5, -190, 0.5, -140)
+TournamentFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TournamentFrame.BorderSizePixel = 0
+TournamentFrame.Visible = false
+TournamentFrame.ZIndex = 80
+TournamentFrame.Parent = ScreenGui
+Instance.new("UICorner", TournamentFrame).CornerRadius = UDim.new(0, 12)
+makeDraggable(TournamentFrame)
+
+local TournamentStroke = Instance.new("UIStroke", TournamentFrame)
+TournamentStroke.Thickness = 2
+TournamentStroke.Color = Color3.fromRGB(80, 210, 255)
+
+local TournamentGrad = Instance.new("UIGradient")
+TournamentGrad.Color = FRAME_BG_GRADIENT
+TournamentGrad.Rotation = 45
+TournamentGrad.Parent = TournamentFrame
+
+local TournamentTitle = Instance.new("TextLabel")
+TournamentTitle.Size = UDim2.new(1, -30, 0, 30)
+TournamentTitle.Position = UDim2.new(0, 10, 0, 5)
+TournamentTitle.BackgroundTransparency = 1
+TournamentTitle.Text = "🏆 SHARK TOURNAMENT ARENA"
+TournamentTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
+TournamentTitle.Font = Enum.Font.GothamBold
+TournamentTitle.TextSize = 12
+TournamentTitle.TextXAlignment = Enum.TextXAlignment.Left
+TournamentTitle.ZIndex = 81
+TournamentTitle.Parent = TournamentFrame
+
+local CloseTournament = Instance.new("TextButton")
+CloseTournament.Size = UDim2.new(0, 24, 0, 24)
+CloseTournament.Position = UDim2.new(1, -28, 0, 6)
+CloseTournament.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+CloseTournament.Text = "X"
+CloseTournament.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseTournament.Font = Enum.Font.GothamBold
+CloseTournament.TextSize = 12
+CloseTournament.ZIndex = 82
+CloseTournament.Parent = TournamentFrame
+Instance.new("UICorner", CloseTournament).CornerRadius = UDim.new(0, 6)
+
+local ArenaArea = Instance.new("Frame")
+ArenaArea.Size = UDim2.new(0.9, 0, 0.55, 0)
+ArenaArea.Position = UDim2.new(0.05, 0, 0.16, 0)
+ArenaArea.BackgroundColor3 = Color3.fromRGB(8, 16, 32)
+ArenaArea.BorderSizePixel = 0
+ArenaArea.ClipsDescendants = true
+ArenaArea.ZIndex = 81
+ArenaArea.Parent = TournamentFrame
+Instance.new("UICorner", ArenaArea).CornerRadius = UDim.new(0, 8)
+
+local Fighter1 = Instance.new("TextLabel")
+Fighter1.Size = UDim2.new(0, 40, 0, 40)
+Fighter1.Position = UDim2.new(0.1, 0, 0.35, 0)
+Fighter1.BackgroundTransparency = 1
+Fighter1.Text = "🦈"
+Fighter1.TextSize = 28
+Fighter1.ZIndex = 82
+Fighter1.Parent = ArenaArea
+
+local Fighter2 = Instance.new("TextLabel")
+Fighter2.Size = UDim2.new(0, 40, 0, 40)
+Fighter2.Position = UDim2.new(0.75, 0, 0.35, 0)
+Fighter2.BackgroundTransparency = 1
+Fighter2.Text = "🐋"
+Fighter2.TextSize = 28
+Fighter2.ZIndex = 82
+Fighter2.Parent = ArenaArea
+
+local ArenaStatus = Instance.new("TextLabel")
+ArenaStatus.Size = UDim2.new(1, 0, 0, 22)
+ArenaStatus.Position = UDim2.new(0, 0, 0.73, 0)
+ArenaStatus.BackgroundTransparency = 1
+ArenaStatus.Text = "Select your fighter below!"
+ArenaStatus.TextColor3 = Color3.fromRGB(0, 220, 255)
+ArenaStatus.Font = Enum.Font.GothamBold
+ArenaStatus.TextSize = 11
+ArenaStatus.ZIndex = 81
+ArenaStatus.Parent = TournamentFrame
+
+local PickGreatWhiteBtn = Instance.new("TextButton")
+PickGreatWhiteBtn.Size = UDim2.new(0.42, 0, 0, 28)
+PickGreatWhiteBtn.Position = UDim2.new(0.05, 0, 0.85, 0)
+PickGreatWhiteBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
+PickGreatWhiteBtn.Text = "CHOOSE 🦈 GREAT WHITE"
+PickGreatWhiteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PickGreatWhiteBtn.Font = Enum.Font.GothamBold
+PickGreatWhiteBtn.TextSize = 9
+PickGreatWhiteBtn.ZIndex = 82
+PickGreatWhiteBtn.Parent = TournamentFrame
+Instance.new("UICorner", PickGreatWhiteBtn).CornerRadius = UDim.new(0, 6)
+
+local PickMegBtn = Instance.new("TextButton")
+PickMegBtn.Size = UDim2.new(0.42, 0, 0, 28)
+PickMegBtn.Position = UDim2.new(0.53, 0, 0.85, 0)
+PickMegBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
+PickMegBtn.Text = "CHOOSE 🐋 MEGALODON"
+PickMegBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PickMegBtn.Font = Enum.Font.GothamBold
+PickMegBtn.TextSize = 9
+PickMegBtn.ZIndex = 82
+PickMegBtn.Parent = TournamentFrame
+Instance.new("UICorner", PickMegBtn).CornerRadius = UDim.new(0, 6)
+
+local isBattling = false
+local function startSharkBattle(userChoice)
+    if isBattling then return end
+    isBattling = true
+    ArenaStatus.Text = "BRAWL STARTED!"
+
+    for i = 1, 10 do
+        Fighter1.Position = UDim2.new(0.1 + (i * 0.025), 0, 0.35, 0)
+        Fighter2.Position = UDim2.new(0.75 - (i * 0.025), 0, 0.35, 0)
+        task.wait(0.1)
+    end
+
+    local won = math.random(1, 2) == userChoice
+    if won then
+        ArenaStatus.Text = "🏆 YOUR SHARK WON THE TOURNAMENT!"
+    else
+        ArenaStatus.Text = "💥 YOUR SHARK WAS DEFEATED!"
+    end
+
+    task.wait(2)
+    Fighter1.Position = UDim2.new(0.1, 0, 0.35, 0)
+    Fighter2.Position = UDim2.new(0.75, 0, 0.35, 0)
+    ArenaStatus.Text = "Select your fighter below!"
+    isBattling = false
+end
+
+PickGreatWhiteBtn.MouseButton1Click:Connect(function() startSharkBattle(1) end)
+PickMegBtn.MouseButton1Click:Connect(function() startSharkBattle(2) end)
+
 -- Mini Game 1: Clicker
 local MiniGameFrame = Instance.new("Frame")
 MiniGameFrame.Size = UDim2.new(0, 320, 0, 240)
@@ -624,9 +761,6 @@ local dotPositions = {
 
 local dotButtons = {}
 
--- Tournament Mini-Game Forward Reference
-local TournamentFrame = Instance.new("Frame")
-
 local function resetConnectDotsGame()
     currentDotIndex = 1
     for i, btn in ipairs(dotButtons) do
@@ -669,142 +803,6 @@ for i, pos in ipairs(dotPositions) do
 
     table.insert(dotButtons, dotBtn)
 end
-
--- Mini Game 3: AI Tournament Brawl
-TournamentFrame.Size = UDim2.new(0, 380, 0, 280)
-TournamentFrame.Position = UDim2.new(0.5, -190, 0.5, -140)
-TournamentFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TournamentFrame.BorderSizePixel = 0
-TournamentFrame.Visible = false
-TournamentFrame.ZIndex = 80
-TournamentFrame.Parent = ScreenGui
-Instance.new("UICorner", TournamentFrame).CornerRadius = UDim.new(0, 12)
-makeDraggable(TournamentFrame)
-
-local TournamentStroke = Instance.new("UIStroke", TournamentFrame)
-TournamentStroke.Thickness = 2
-TournamentStroke.Color = Color3.fromRGB(80, 210, 255)
-
-local TournamentGrad = Instance.new("UIGradient")
-TournamentGrad.Color = FRAME_BG_GRADIENT
-TournamentGrad.Rotation = 45
-TournamentGrad.Parent = TournamentFrame
-
-local TournamentTitle = Instance.new("TextLabel")
-TournamentTitle.Size = UDim2.new(1, -30, 0, 30)
-TournamentTitle.Position = UDim2.new(0, 10, 0, 5)
-TournamentTitle.BackgroundTransparency = 1
-TournamentTitle.Text = "🏆 SHARK TOURNAMENT ARENA"
-TournamentTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
-TournamentTitle.Font = Enum.Font.GothamBold
-TournamentTitle.TextSize = 12
-TournamentTitle.TextXAlignment = Enum.TextXAlignment.Left
-TournamentTitle.ZIndex = 81
-TournamentTitle.Parent = TournamentFrame
-
-local CloseTournament = Instance.new("TextButton")
-CloseTournament.Size = UDim2.new(0, 24, 0, 24)
-CloseTournament.Position = UDim2.new(1, -28, 0, 6)
-CloseTournament.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-CloseTournament.Text = "X"
-CloseTournament.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseTournament.Font = Enum.Font.GothamBold
-CloseTournament.TextSize = 12
-CloseTournament.ZIndex = 82
-CloseTournament.Parent = TournamentFrame
-Instance.new("UICorner", CloseTournament).CornerRadius = UDim.new(0, 6)
-
-local ArenaArea = Instance.new("Frame")
-ArenaArea.Size = UDim2.new(0.9, 0, 0.55, 0)
-ArenaArea.Position = UDim2.new(0.05, 0, 0.16, 0)
-ArenaArea.BackgroundColor3 = Color3.fromRGB(8, 16, 32)
-ArenaArea.BorderSizePixel = 0
-ArenaArea.ClipsDescendants = true
-ArenaArea.ZIndex = 81
-ArenaArea.Parent = TournamentFrame
-Instance.new("UICorner", ArenaArea).CornerRadius = UDim.new(0, 8)
-
-local Fighter1 = Instance.new("TextLabel")
-Fighter1.Size = UDim2.new(0, 40, 0, 40)
-Fighter1.Position = UDim2.new(0.1, 0, 0.35, 0)
-Fighter1.BackgroundTransparency = 1
-Fighter1.Text = "🦈"
-Fighter1.TextSize = 28
-Fighter1.ZIndex = 82
-Fighter1.Parent = ArenaArea
-
-local Fighter2 = Instance.new("TextLabel")
-Fighter2.Size = UDim2.new(0, 40, 0, 40)
-Fighter2.Position = UDim2.new(0.75, 0, 0.35, 0)
-Fighter2.BackgroundTransparency = 1
-Fighter2.Text = "🐋"
-Fighter2.TextSize = 28
-Fighter2.ZIndex = 82
-Fighter2.Parent = ArenaArea
-
-local ArenaStatus = Instance.new("TextLabel")
-ArenaStatus.Size = UDim2.new(1, 0, 0, 22)
-ArenaStatus.Position = UDim2.new(0, 0, 0.73, 0)
-ArenaStatus.BackgroundTransparency = 1
-ArenaStatus.Text = "Select your fighter below!"
-ArenaStatus.TextColor3 = Color3.fromRGB(0, 220, 255)
-ArenaStatus.Font = Enum.Font.GothamBold
-ArenaStatus.TextSize = 11
-ArenaStatus.ZIndex = 81
-ArenaStatus.Parent = TournamentFrame
-
-local PickGreatWhiteBtn = Instance.new("TextButton")
-PickGreatWhiteBtn.Size = UDim2.new(0.42, 0, 0, 28)
-PickGreatWhiteBtn.Position = UDim2.new(0.05, 0, 0.85, 0)
-PickGreatWhiteBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
-PickGreatWhiteBtn.Text = "CHOOSE 🦈 GREAT WHITE"
-PickGreatWhiteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PickGreatWhiteBtn.Font = Enum.Font.GothamBold
-PickGreatWhiteBtn.TextSize = 9
-PickGreatWhiteBtn.ZIndex = 82
-PickGreatWhiteBtn.Parent = TournamentFrame
-Instance.new("UICorner", PickGreatWhiteBtn).CornerRadius = UDim.new(0, 6)
-
-local PickMegBtn = Instance.new("TextButton")
-PickMegBtn.Size = UDim2.new(0.42, 0, 0, 28)
-PickMegBtn.Position = UDim2.new(0.53, 0, 0.85, 0)
-PickMegBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
-PickMegBtn.Text = "CHOOSE 🐋 MEGALODON"
-PickMegBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PickMegBtn.Font = Enum.Font.GothamBold
-PickMegBtn.TextSize = 9
-PickMegBtn.ZIndex = 82
-PickMegBtn.Parent = TournamentFrame
-Instance.new("UICorner", PickMegBtn).CornerRadius = UDim.new(0, 6)
-
-local isBattling = false
-local function startSharkBattle(userChoice)
-    if isBattling then return end
-    isBattling = true
-    ArenaStatus.Text = "BRAWL STARTED!"
-
-    for i = 1, 10 do
-        Fighter1.Position = UDim2.new(0.1 + (i * 0.025), 0, 0.35, 0)
-        Fighter2.Position = UDim2.new(0.75 - (i * 0.025), 0, 0.35, 0)
-        task.wait(0.1)
-    end
-
-    local won = math.random(1, 2) == userChoice
-    if won then
-        ArenaStatus.Text = "🏆 YOUR SHARK WON THE TOURNAMENT!"
-    else
-        ArenaStatus.Text = "💥 YOUR SHARK WAS DEFEATED!"
-    end
-
-    task.wait(2)
-    Fighter1.Position = UDim2.new(0.1, 0, 0.35, 0)
-    Fighter2.Position = UDim2.new(0.75, 0, 0.35, 0)
-    ArenaStatus.Text = "Select your fighter below!"
-    isBattling = false
-end
-
-PickGreatWhiteBtn.MouseButton1Click:Connect(function() startSharkBattle(1) end)
-PickMegBtn.MouseButton1Click:Connect(function() startSharkBattle(2) end)
 
 --------------------------------------------------------------------------------
 -- MINIMIZE CONTROLLER
