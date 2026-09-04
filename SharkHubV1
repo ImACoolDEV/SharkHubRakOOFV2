@@ -1,4 +1,4 @@
--- Shark Hub V3.45 | Galaxy Edition (MainCalamity + GiftRain/LootItem Fixed + Spin 30x Added)
+-- Shark Hub V3.45 | Galaxy Edition (MainCalamity + GiftRain/LootItem Fixed + Spin 30x Added)[cite: 5]
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -1184,3 +1184,4 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
     else
         if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
     end
+end)
