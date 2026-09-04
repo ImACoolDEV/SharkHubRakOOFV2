@@ -49,7 +49,8 @@ local VALID_KEYS = {
     ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
     ["SHARK-HUB-VIP-2026-KEY99"] = true,
     ["SHARK-PUZZLE-SOLVED-KEY88"] = true,
-    ["ALPHA-PREMIUM-ACCESS-7731"] = true
+    ["ALPHA-PREMIUM-ACCESS-7731"] = true,
+    ["Trebys-Best-Friend-Treb919"] = true,
 }
 
 -- States
