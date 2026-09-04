@@ -1,18 +1,17 @@
--- Shark Hub V4.00 | Master Merged Edition (Admin + Mini-Games + Custom Shark Companion)
+-- Shark Hub V3.30 | Glassmorphic Multi-Key Edition (AI Battle Edition)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ============================================================================
--- USER & ADMIN CHECK LOGIC
--- ============================================================================
+-- Banned User Guard
 local BANNED_USER_ID = 10536747864
 local BANNED_USERNAME = "ScarymannnnnnnnOK"
 
@@ -35,13 +34,16 @@ if LocalPlayer.UserId == BANNED_USER_ID or LocalPlayer.Name == BANNED_USERNAME t
     BanText.Font = Enum.Font.GothamBold
     BanText.TextSize = 48
     BanText.Parent = BanFrame
+
     return
 end
 
-local IS_ADMIN = (LocalPlayer.UserId == 9603761866 or string.lower(LocalPlayer.Name) == "trebtrebalt3")
+-- Key Bypass Check
+local IS_KEYLESS_USER = (LocalPlayer.UserId == 9603761866 or LocalPlayer.Name == "trebtrebalt3")
 
+-- State & Key Variables
 local TARGET_NAME = "DOOFmmy"
-local RAKE_NAME = "the_rake"
+local RAKE_NAME = "THE_RAKE"
 
 local VALID_KEYS = {
     ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
@@ -51,9 +53,8 @@ local VALID_KEYS = {
 }
 
 -- States
-local AUTO_RAKE_ENABLED = false
+local AI_BATTLE_ENABLED = false
 local AUTO_ATTACK_ENABLED = false
-local GODMODE_ENABLED = false
 local BRING_BOSS_ENABLED = false
 local EXPAND_HITBOX_ENABLED = false
 local SPEED_BOOST_ENABLED = false
@@ -61,12 +62,9 @@ local AUTO_PICKUP_ENABLED = false
 local TRIGGERBOT_ENABLED = false
 local AUTO_ESCAPE_ENABLED = false
 local BRING_RAKOOF_ENABLED = false
-local FLYING_SHARK_ENABLED = false
 local FORCE_DROP_ENABLED = false
-local CALAMITY_MODE_ENABLED = false
-local FLY_ENABLED = false
-local NOCLIP_ENABLED = false
 
+-- Luck Boost States
 local LUCK_250_ENABLED = false
 local LUCK_500_ENABLED = false
 local LUCK_750_ENABLED = false
@@ -74,7 +72,8 @@ local LUCK_1000_ENABLED = false
 
 local TOGGLE_KEY = Enum.KeyCode.RightControl 
 
-local rakeLoop, attackLoop, bringLoop, godConnection, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, sharkLoop, forceDropLoop, calamityLoop, flyLoop
+-- Connection Variables
+local aiBattleLoop, attackLoop, bringLoop, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, forceDropLoop
 local luck250Loop, luck500Loop, luck750Loop, luck1000Loop
 
 local TARGET_ITEMS = {
@@ -84,11 +83,6 @@ local TARGET_ITEMS = {
 }
 
 local WEAPON_PRIORITY = { "Ruinstrikers", "TormentumAxe", "Murasama", "StunStick" }
-
--- Mini-Game State
-local miniGameScore = 0
-local connectDotsWins = 0
-local currentDotIndex = 1
 
 local function findItemDropRemote()
     local itemDrop = ReplicatedStorage:FindFirstChild("ItemDrop", true) or Workspace:FindFirstChild("ItemDrop", true)
@@ -165,16 +159,19 @@ local function executeSpamClick()
     end
 end
 
-local function executeFarmAttack()
-    local character = LocalPlayer.Character
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local bestTool = getBestWeapon()
-    
-    if humanoid and bestTool then
-        if bestTool.Parent ~= character then humanoid:EquipTool(bestTool) end
-        bestTool:Activate()
-        executeSpamClick()
+-- Helper logic to trigger CalamityMAIN script triggers
+local function triggerCalamityScript()
+    for _, scriptObj in ipairs(game:GetDescendants()) do
+        if scriptObj.Name == "CalamityMAIN" then
+            if scriptObj:IsA("BindableEvent") or scriptObj:IsA("RemoteEvent") then
+                pcall(function() scriptObj:FireServer() end)
+                pcall(function() scriptObj:Fire() end)
+            elseif scriptObj:IsA("ModuleScript") then
+                pcall(function() require(scriptObj)() end)
+            elseif scriptObj:IsA("LocalScript") and scriptObj.Enabled == false then
+                scriptObj.Enabled = true
+            end
+        end
     end
 end
 
@@ -197,40 +194,11 @@ local function disableContinuousNoclip()
     end
 end
 
-local function makeDraggable(frame, handle)
-    local dragging, dragInput, dragStart, startPos
-    handle = handle or frame
-    
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
 --------------------------------------------------------------------------------
--- BASE GUI SETUP
+-- BLUE GRADIENT UI IMPLEMENTATION
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SharkHubV4_Master"
+ScreenGui.Name = "SharkHubV3_FullBlue"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.DisplayOrder = 100
 ScreenGui.Parent = PlayerGui
@@ -254,41 +222,16 @@ local FRAME_BG_GRADIENT = ColorSequence.new({
 })
 
 --------------------------------------------------------------------------------
--- FLOATING MINIMIZE BUTTON
---------------------------------------------------------------------------------
-local SharkCircleBtn = Instance.new("TextButton")
-SharkCircleBtn.Size = UDim2.new(0, 55, 0, 55)
-SharkCircleBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
-SharkCircleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-SharkCircleBtn.Text = "🦈"
-SharkCircleBtn.TextSize = 28
-SharkCircleBtn.Visible = false
-SharkCircleBtn.ZIndex = 200
-SharkCircleBtn.Parent = ScreenGui
-Instance.new("UICorner", SharkCircleBtn).CornerRadius = UDim.new(1, 0)
-
-local SharkCircleStroke = Instance.new("UIStroke", SharkCircleBtn)
-SharkCircleStroke.Thickness = 2.5
-SharkCircleStroke.Color = Color3.fromRGB(0, 220, 255)
-
-local SharkCircleGrad = Instance.new("UIGradient")
-SharkCircleGrad.Color = BLUE_ON_GRADIENT
-SharkCircleGrad.Parent = SharkCircleBtn
-
-makeDraggable(SharkCircleBtn)
-
---------------------------------------------------------------------------------
--- DRAGGABLE SPEED GUI (UPGRADED)
+-- WALKSPEED CHANGER GUI
 --------------------------------------------------------------------------------
 local SpeedGuiFrame = Instance.new("Frame")
-SpeedGuiFrame.Size = UDim2.new(0, 200, 0, 95)
-SpeedGuiFrame.Position = UDim2.new(1, -210, 0, 20)
+SpeedGuiFrame.Size = UDim2.new(0, 180, 0, 90)
+SpeedGuiFrame.Position = UDim2.new(1, -190, 0, 20)
 SpeedGuiFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 SpeedGuiFrame.BorderSizePixel = 0
 SpeedGuiFrame.ZIndex = 50
 SpeedGuiFrame.Parent = ScreenGui
 Instance.new("UICorner", SpeedGuiFrame).CornerRadius = UDim.new(0, 10)
-makeDraggable(SpeedGuiFrame)
 
 local SpeedGuiStroke = Instance.new("UIStroke", SpeedGuiFrame)
 SpeedGuiStroke.Thickness = 1.5
@@ -303,10 +246,10 @@ local SpeedTitle = Instance.new("TextLabel")
 SpeedTitle.Size = UDim2.new(1, 0, 0, 22)
 SpeedTitle.Position = UDim2.new(0, 0, 0, 4)
 SpeedTitle.BackgroundTransparency = 1
-SpeedTitle.Text = IS_ADMIN and "⚡ SPEED CHANGER (ADMIN)" or "⚡ SPEED CHANGER"
+SpeedTitle.Text = "⚡ SPEED CHANGER"
 SpeedTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
 SpeedTitle.Font = Enum.Font.GothamBold
-SpeedTitle.TextSize = 10
+SpeedTitle.TextSize = 11
 SpeedTitle.ZIndex = 51
 SpeedTitle.Parent = SpeedGuiFrame
 
@@ -315,7 +258,7 @@ SpeedBox.Size = UDim2.new(0.85, 0, 0, 26)
 SpeedBox.Position = UDim2.new(0.075, 0, 0, 28)
 SpeedBox.BackgroundColor3 = Color3.fromRGB(12, 28, 54)
 SpeedBox.Text = "16"
-SpeedBox.PlaceholderText = IS_ADMIN and "Speed (Max 250)..." or "Speed..."
+SpeedBox.PlaceholderText = "Speed..."
 SpeedBox.TextColor3 = Color3.fromRGB(0, 220, 255)
 SpeedBox.Font = Enum.Font.GothamBold
 SpeedBox.TextSize = 12
@@ -343,8 +286,6 @@ ApplySpeedGrad.Parent = ApplySpeedBtn
 ApplySpeedBtn.MouseButton1Click:Connect(function()
     local val = tonumber(SpeedBox.Text)
     if val then
-        local maxVal = IS_ADMIN and 250 or 100
-        val = math.clamp(val, 0, maxVal)
         local char = LocalPlayer.Character
         if char and char:FindFirstChildOfClass("Humanoid") then
             char:FindFirstChildOfClass("Humanoid").WalkSpeed = val
@@ -353,261 +294,8 @@ ApplySpeedBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- ADMIN GUI (TREBTREBALT3 ONLY)
+-- FUN MINI-GAME: SHARK ATTACK CLICKER
 --------------------------------------------------------------------------------
-local AdminFrame = Instance.new("Frame")
-AdminFrame.Size = UDim2.new(0, 220, 0, 180)
-AdminFrame.Position = UDim2.new(0, 20, 0, 20)
-AdminFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-AdminFrame.BorderSizePixel = 0
-AdminFrame.Visible = IS_ADMIN
-AdminFrame.ZIndex = 90
-AdminFrame.Parent = ScreenGui
-Instance.new("UICorner", AdminFrame).CornerRadius = UDim.new(0, 12)
-makeDraggable(AdminFrame)
-
-local AdminStroke = Instance.new("UIStroke", AdminFrame)
-AdminStroke.Thickness = 2
-AdminStroke.Color = Color3.fromRGB(255, 180, 0)
-
-local AdminGrad = Instance.new("UIGradient")
-AdminGrad.Color = FRAME_BG_GRADIENT
-AdminGrad.Rotation = 45
-AdminGrad.Parent = AdminFrame
-
-local AdminTitle = Instance.new("TextLabel")
-AdminTitle.Size = UDim2.new(1, 0, 0, 28)
-AdminTitle.Position = UDim2.new(0, 0, 0, 4)
-AdminTitle.BackgroundTransparency = 1
-AdminTitle.Text = "👑 ADMIN CONTROL PANEL"
-AdminTitle.TextColor3 = Color3.fromRGB(255, 200, 50)
-AdminTitle.Font = Enum.Font.GothamBold
-AdminTitle.TextSize = 11
-AdminTitle.ZIndex = 91
-AdminTitle.Parent = AdminFrame
-
-local function CreateAdminToggle(text, posy, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.88, 0, 0, 32)
-    btn.Position = UDim2.new(0.06, 0, 0, posy)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Text = text .. ": OFF"
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 10
-    btn.ZIndex = 91
-    btn.Parent = AdminFrame
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-
-    local grad = Instance.new("UIGradient")
-    grad.Color = BLUE_OFF_GRADIENT
-    grad.Rotation = 90
-    grad.Parent = btn
-
-    local state = false
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        btn.Text = text .. (state and ": ON" or ": OFF")
-        grad.Color = state and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-        callback(state)
-    end)
-end
-
-CreateAdminToggle("🕊️ FLY MODE", 36, function(active)
-    FLY_ENABLED = active
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    
-    if FLY_ENABLED then
-        local bv = Instance.new("BodyVelocity")
-        bv.Name = "AdminFlyVelocity"
-        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        bv.Velocity = Vector3.zero
-        bv.Parent = hrp
-
-        flyLoop = RunService.RenderStepped:Connect(function()
-            local cam = Workspace.CurrentCamera
-            local moveDir = Vector3.zero
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-            
-            bv.Velocity = moveDir * 60
-        end)
-    else
-        if flyLoop then flyLoop:Disconnect() flyLoop = nil end
-        if hrp and hrp:FindFirstChild("AdminFlyVelocity") then hrp.AdminFlyVelocity:Destroy() end
-    end
-end)
-
-CreateAdminToggle("👻 NOCLIP", 76, function(active)
-    NOCLIP_ENABLED = active
-    if NOCLIP_ENABLED then
-        enableContinuousNoclip()
-    else
-        disableContinuousNoclip()
-    end
-end)
-
-CreateAdminToggle("🛡️ ADMIN GODMODE", 116, function(active)
-    GODMODE_ENABLED = active
-    if GODMODE_ENABLED then
-        godConnection = RunService.Stepped:Connect(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChildOfClass("Humanoid") then
-                char:FindFirstChildOfClass("Humanoid").Health = char:FindFirstChildOfClass("Humanoid").MaxHealth
-            end
-        end)
-    else
-        if godConnection then godConnection:Disconnect() godConnection = nil end
-    end
-end)
-
---------------------------------------------------------------------------------
--- MINI GAMES ENGINE
---------------------------------------------------------------------------------
--- Mini Game 3: AI Tournament Brawl (Declared First to fix reference issues)
-local TournamentFrame = Instance.new("Frame")
-TournamentFrame.Size = UDim2.new(0, 380, 0, 280)
-TournamentFrame.Position = UDim2.new(0.5, -190, 0.5, -140)
-TournamentFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TournamentFrame.BorderSizePixel = 0
-TournamentFrame.Visible = false
-TournamentFrame.ZIndex = 80
-TournamentFrame.Parent = ScreenGui
-Instance.new("UICorner", TournamentFrame).CornerRadius = UDim.new(0, 12)
-makeDraggable(TournamentFrame)
-
-local TournamentStroke = Instance.new("UIStroke", TournamentFrame)
-TournamentStroke.Thickness = 2
-TournamentStroke.Color = Color3.fromRGB(80, 210, 255)
-
-local TournamentGrad = Instance.new("UIGradient")
-TournamentGrad.Color = FRAME_BG_GRADIENT
-TournamentGrad.Rotation = 45
-TournamentGrad.Parent = TournamentFrame
-
-local TournamentTitle = Instance.new("TextLabel")
-TournamentTitle.Size = UDim2.new(1, -30, 0, 30)
-TournamentTitle.Position = UDim2.new(0, 10, 0, 5)
-TournamentTitle.BackgroundTransparency = 1
-TournamentTitle.Text = "🏆 SHARK TOURNAMENT ARENA"
-TournamentTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
-TournamentTitle.Font = Enum.Font.GothamBold
-TournamentTitle.TextSize = 12
-TournamentTitle.TextXAlignment = Enum.TextXAlignment.Left
-TournamentTitle.ZIndex = 81
-TournamentTitle.Parent = TournamentFrame
-
-local CloseTournament = Instance.new("TextButton")
-CloseTournament.Size = UDim2.new(0, 24, 0, 24)
-CloseTournament.Position = UDim2.new(1, -28, 0, 6)
-CloseTournament.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-CloseTournament.Text = "X"
-CloseTournament.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseTournament.Font = Enum.Font.GothamBold
-CloseTournament.TextSize = 12
-CloseTournament.ZIndex = 82
-CloseTournament.Parent = TournamentFrame
-Instance.new("UICorner", CloseTournament).CornerRadius = UDim.new(0, 6)
-
-local ArenaArea = Instance.new("Frame")
-ArenaArea.Size = UDim2.new(0.9, 0, 0.55, 0)
-ArenaArea.Position = UDim2.new(0.05, 0, 0.16, 0)
-ArenaArea.BackgroundColor3 = Color3.fromRGB(8, 16, 32)
-ArenaArea.BorderSizePixel = 0
-ArenaArea.ClipsDescendants = true
-ArenaArea.ZIndex = 81
-ArenaArea.Parent = TournamentFrame
-Instance.new("UICorner", ArenaArea).CornerRadius = UDim.new(0, 8)
-
-local Fighter1 = Instance.new("TextLabel")
-Fighter1.Size = UDim2.new(0, 40, 0, 40)
-Fighter1.Position = UDim2.new(0.1, 0, 0.35, 0)
-Fighter1.BackgroundTransparency = 1
-Fighter1.Text = "🦈"
-Fighter1.TextSize = 28
-Fighter1.ZIndex = 82
-Fighter1.Parent = ArenaArea
-
-local Fighter2 = Instance.new("TextLabel")
-Fighter2.Size = UDim2.new(0, 40, 0, 40)
-Fighter2.Position = UDim2.new(0.75, 0, 0.35, 0)
-Fighter2.BackgroundTransparency = 1
-Fighter2.Text = "🐋"
-Fighter2.TextSize = 28
-Fighter2.ZIndex = 82
-Fighter2.Parent = ArenaArea
-
-local ArenaStatus = Instance.new("TextLabel")
-ArenaStatus.Size = UDim2.new(1, 0, 0, 22)
-ArenaStatus.Position = UDim2.new(0, 0, 0.73, 0)
-ArenaStatus.BackgroundTransparency = 1
-ArenaStatus.Text = "Select your fighter below!"
-ArenaStatus.TextColor3 = Color3.fromRGB(0, 220, 255)
-ArenaStatus.Font = Enum.Font.GothamBold
-ArenaStatus.TextSize = 11
-ArenaStatus.ZIndex = 81
-ArenaStatus.Parent = TournamentFrame
-
-local PickGreatWhiteBtn = Instance.new("TextButton")
-PickGreatWhiteBtn.Size = UDim2.new(0.42, 0, 0, 28)
-PickGreatWhiteBtn.Position = UDim2.new(0.05, 0, 0.85, 0)
-PickGreatWhiteBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
-PickGreatWhiteBtn.Text = "CHOOSE 🦈 GREAT WHITE"
-PickGreatWhiteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PickGreatWhiteBtn.Font = Enum.Font.GothamBold
-PickGreatWhiteBtn.TextSize = 9
-PickGreatWhiteBtn.ZIndex = 82
-PickGreatWhiteBtn.Parent = TournamentFrame
-Instance.new("UICorner", PickGreatWhiteBtn).CornerRadius = UDim.new(0, 6)
-
-local PickMegBtn = Instance.new("TextButton")
-PickMegBtn.Size = UDim2.new(0.42, 0, 0, 28)
-PickMegBtn.Position = UDim2.new(0.53, 0, 0.85, 0)
-PickMegBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 230)
-PickMegBtn.Text = "CHOOSE 🐋 MEGALODON"
-PickMegBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-PickMegBtn.Font = Enum.Font.GothamBold
-PickMegBtn.TextSize = 9
-PickMegBtn.ZIndex = 82
-PickMegBtn.Parent = TournamentFrame
-Instance.new("UICorner", PickMegBtn).CornerRadius = UDim.new(0, 6)
-
-local isBattling = false
-local function startSharkBattle(userChoice)
-    if isBattling then return end
-    isBattling = true
-    ArenaStatus.Text = "BRAWL STARTED!"
-
-    for i = 1, 10 do
-        Fighter1.Position = UDim2.new(0.1 + (i * 0.025), 0, 0.35, 0)
-        Fighter2.Position = UDim2.new(0.75 - (i * 0.025), 0, 0.35, 0)
-        task.wait(0.1)
-    end
-
-    local won = math.random(1, 2) == userChoice
-    if won then
-        ArenaStatus.Text = "🏆 YOUR SHARK WON THE TOURNAMENT!"
-    else
-        ArenaStatus.Text = "💥 YOUR SHARK WAS DEFEATED!"
-    end
-
-    task.wait(2)
-    Fighter1.Position = UDim2.new(0.1, 0, 0.35, 0)
-    Fighter2.Position = UDim2.new(0.75, 0, 0.35, 0)
-    ArenaStatus.Text = "Select your fighter below!"
-    isBattling = false
-end
-
-PickGreatWhiteBtn.MouseButton1Click:Connect(function() startSharkBattle(1) end)
-PickMegBtn.MouseButton1Click:Connect(function() startSharkBattle(2) end)
-
--- Mini Game 1: Clicker
 local MiniGameFrame = Instance.new("Frame")
 MiniGameFrame.Size = UDim2.new(0, 320, 0, 240)
 MiniGameFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
@@ -617,7 +305,6 @@ MiniGameFrame.Visible = false
 MiniGameFrame.ZIndex = 60
 MiniGameFrame.Parent = ScreenGui
 Instance.new("UICorner", MiniGameFrame).CornerRadius = UDim.new(0, 12)
-makeDraggable(MiniGameFrame)
 
 local MiniGameStroke = Instance.new("UIStroke", MiniGameFrame)
 MiniGameStroke.Thickness = 2
@@ -632,7 +319,7 @@ local MiniGameTitle = Instance.new("TextLabel")
 MiniGameTitle.Size = UDim2.new(1, -30, 0, 30)
 MiniGameTitle.Position = UDim2.new(0, 10, 0, 5)
 MiniGameTitle.BackgroundTransparency = 1
-MiniGameTitle.Text = "🎮 SHARK CATCHER (0/50)"
+MiniGameTitle.Text = "🎮 SHARK CATCHER MINI-GAME"
 MiniGameTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
 MiniGameTitle.Font = Enum.Font.GothamBold
 MiniGameTitle.TextSize = 12
@@ -656,7 +343,7 @@ local ScoreLabel = Instance.new("TextLabel")
 ScoreLabel.Size = UDim2.new(1, 0, 0, 20)
 ScoreLabel.Position = UDim2.new(0, 0, 0, 32)
 ScoreLabel.BackgroundTransparency = 1
-ScoreLabel.Text = "Sharks Caught: 0"
+ScoreLabel.Text = "Score: 0"
 ScoreLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
 ScoreLabel.Font = Enum.Font.GothamBold
 ScoreLabel.TextSize = 13
@@ -687,6 +374,7 @@ local TargetGrad = Instance.new("UIGradient")
 TargetGrad.Color = BLUE_ON_GRADIENT
 TargetGrad.Parent = TargetBtn
 
+local miniGameScore = 0
 local function moveTarget()
     local maxX = MiniGameArea.AbsoluteSize.X - TargetBtn.AbsoluteSize.X
     local maxY = MiniGameArea.AbsoluteSize.Y - TargetBtn.AbsoluteSize.Y
@@ -697,154 +385,17 @@ local function moveTarget()
     end
 end
 
--- Mini Game 2: Connect Dots
-local ConnectDotsFrame = Instance.new("Frame")
-ConnectDotsFrame.Size = UDim2.new(0, 340, 0, 280)
-ConnectDotsFrame.Position = UDim2.new(0.5, -170, 0.5, -140)
-ConnectDotsFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ConnectDotsFrame.BorderSizePixel = 0
-ConnectDotsFrame.Visible = false
-ConnectDotsFrame.ZIndex = 70
-ConnectDotsFrame.Parent = ScreenGui
-Instance.new("UICorner", ConnectDotsFrame).CornerRadius = UDim.new(0, 12)
-makeDraggable(ConnectDotsFrame)
-
-local ConnectDotsStroke = Instance.new("UIStroke", ConnectDotsFrame)
-ConnectDotsStroke.Thickness = 2
-ConnectDotsStroke.Color = Color3.fromRGB(80, 210, 255)
-
-local ConnectDotsGrad = Instance.new("UIGradient")
-ConnectDotsGrad.Color = FRAME_BG_GRADIENT
-ConnectDotsGrad.Rotation = 45
-ConnectDotsGrad.Parent = ConnectDotsFrame
-
-local ConnectDotsTitle = Instance.new("TextLabel")
-ConnectDotsTitle.Size = UDim2.new(1, -30, 0, 30)
-ConnectDotsTitle.Position = UDim2.new(0, 10, 0, 5)
-ConnectDotsTitle.BackgroundTransparency = 1
-ConnectDotsTitle.Text = "✨ CONNECT THE DOTS (Wins: 0/10)"
-ConnectDotsTitle.TextColor3 = Color3.fromRGB(180, 235, 255)
-ConnectDotsTitle.Font = Enum.Font.GothamBold
-ConnectDotsTitle.TextSize = 12
-ConnectDotsTitle.TextXAlignment = Enum.TextXAlignment.Left
-ConnectDotsTitle.ZIndex = 71
-ConnectDotsTitle.Parent = ConnectDotsFrame
-
-local CloseConnectDots = Instance.new("TextButton")
-CloseConnectDots.Size = UDim2.new(0, 24, 0, 24)
-CloseConnectDots.Position = UDim2.new(1, -28, 0, 6)
-CloseConnectDots.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-CloseConnectDots.Text = "X"
-CloseConnectDots.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseConnectDots.Font = Enum.Font.GothamBold
-CloseConnectDots.TextSize = 12
-CloseConnectDots.ZIndex = 72
-CloseConnectDots.Parent = ConnectDotsFrame
-Instance.new("UICorner", CloseConnectDots).CornerRadius = UDim.new(0, 6)
-
-local DotsArea = Instance.new("Frame")
-DotsArea.Size = UDim2.new(0.9, 0, 0.78, 0)
-DotsArea.Position = UDim2.new(0.05, 0, 0.18, 0)
-DotsArea.BackgroundColor3 = Color3.fromRGB(10, 20, 40)
-DotsArea.BorderSizePixel = 0
-DotsArea.ZIndex = 71
-DotsArea.Parent = ConnectDotsFrame
-Instance.new("UICorner", DotsArea).CornerRadius = UDim.new(0, 8)
-
-local dotPositions = {
-    UDim2.new(0.1, 0, 0.5, 0),
-    UDim2.new(0.3, 0, 0.15, 0),
-    UDim2.new(0.7, 0, 0.15, 0),
-    UDim2.new(0.9, 0, 0.5, 0),
-    UDim2.new(0.5, 0, 0.85, 0)
-}
-
-local dotButtons = {}
-
-local function resetConnectDotsGame()
-    currentDotIndex = 1
-    for i, btn in ipairs(dotButtons) do
-        btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(0, 140, 255)
-    end
-end
-
-for i, pos in ipairs(dotPositions) do
-    local dotBtn = Instance.new("TextButton")
-    dotBtn.Size = UDim2.new(0, 30, 0, 30)
-    dotBtn.Position = pos
-    dotBtn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(0, 140, 255)
-    dotBtn.Text = tostring(i)
-    dotBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dotBtn.Font = Enum.Font.GothamBold
-    dotBtn.TextSize = 14
-    dotBtn.ZIndex = 72
-    dotBtn.Parent = DotsArea
-    Instance.new("UICorner", dotBtn).CornerRadius = UDim.new(1, 0)
-
-    dotBtn.MouseButton1Click:Connect(function()
-        if i == currentDotIndex then
-            dotBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
-            currentDotIndex = currentDotIndex + 1
-
-            if currentDotIndex > #dotPositions then
-                connectDotsWins = connectDotsWins + 1
-                ConnectDotsTitle.Text = "✨ CONNECT THE DOTS (Wins: " .. tostring(connectDotsWins) .. "/10)"
-
-                if connectDotsWins >= 10 then
-                    ConnectDotsFrame.Visible = false
-                    TournamentFrame.Visible = true
-                else
-                    task.wait(0.3)
-                    resetConnectDotsGame()
-                end
-            end
-        end
-    end)
-
-    table.insert(dotButtons, dotBtn)
-end
-
---------------------------------------------------------------------------------
--- MINIMIZE CONTROLLER
---------------------------------------------------------------------------------
-local activeMinimizedFrames = {}
-
-local function setupMinimizeControl(frame, closeBtn)
-    closeBtn.MouseButton1Click:Connect(function()
-        frame.Visible = false
-        table.insert(activeMinimizedFrames, frame)
-        SharkCircleBtn.Visible = true
-    end)
-end
-
-setupMinimizeControl(MiniGameFrame, CloseMiniGame)
-setupMinimizeControl(ConnectDotsFrame, CloseConnectDots)
-setupMinimizeControl(TournamentFrame, CloseTournament)
-
-SharkCircleBtn.MouseButton1Click:Connect(function()
-    for _, frame in ipairs(activeMinimizedFrames) do
-        frame.Visible = true
-    end
-    table.clear(activeMinimizedFrames)
-    SharkCircleBtn.Visible = false
-end)
-
 TargetBtn.MouseButton1Click:Connect(function()
     miniGameScore = miniGameScore + 1
-    ScoreLabel.Text = "Sharks Caught: " .. tostring(miniGameScore)
-    MiniGameTitle.Text = "🎮 SHARK CATCHER (" .. tostring(miniGameScore) .. "/50)"
-    
-    if miniGameScore >= 50 and not ConnectDotsFrame.Visible and connectDotsWins < 10 then
-        MiniGameFrame.Visible = false
-        ConnectDotsFrame.Visible = true
-    end
-    
+    ScoreLabel.Text = "Score: " .. tostring(miniGameScore)
     moveTarget()
 end)
 
---------------------------------------------------------------------------------
--- KEY / PUZZLE ACCESS WINDOW
---------------------------------------------------------------------------------
+CloseMiniGame.MouseButton1Click:Connect(function()
+    MiniGameFrame.Visible = false
+end)
+
+-- Key Authentication Frame
 local KeyFrame = Instance.new("Frame")
 KeyFrame.Size = UDim2.new(0, 420, 0, 270)
 KeyFrame.Position = UDim2.new(0.5, -210, 0.5, -135)
@@ -853,7 +404,6 @@ KeyFrame.BorderSizePixel = 0
 KeyFrame.ZIndex = 2
 KeyFrame.Parent = ScreenGui
 Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 14)
-makeDraggable(KeyFrame)
 
 local KeyStroke = Instance.new("UIStroke", KeyFrame)
 KeyStroke.Thickness = 2
@@ -922,7 +472,7 @@ PuzzleGrad.Color = BLUE_ON_GRADIENT
 PuzzleGrad.Rotation = 90
 PuzzleGrad.Parent = PuzzleChallengeBtn
 
--- Puzzle Challenge
+-- Puzzle Popup Frame
 local PuzzleFrame = Instance.new("Frame")
 PuzzleFrame.Size = UDim2.new(0, 360, 0, 220)
 PuzzleFrame.Position = UDim2.new(0.5, -180, 0.5, -110)
@@ -932,7 +482,6 @@ PuzzleFrame.Visible = false
 PuzzleFrame.ZIndex = 15
 PuzzleFrame.Parent = ScreenGui
 Instance.new("UICorner", PuzzleFrame).CornerRadius = UDim.new(0, 12)
-makeDraggable(PuzzleFrame)
 
 local PuzzleFrameGrad = Instance.new("UIGradient")
 PuzzleFrameGrad.Color = FRAME_BG_GRADIENT
@@ -991,9 +540,7 @@ SubmitPuzzleGrad.Color = BLUE_ON_GRADIENT
 SubmitPuzzleGrad.Rotation = 90
 SubmitPuzzleGrad.Parent = SubmitPuzzleBtn
 
---------------------------------------------------------------------------------
--- MAIN HUB
---------------------------------------------------------------------------------
+-- Main Hub Window
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 740, 0, 460)
 MainFrame.Position = UDim2.new(0.5, -370, 0.5, -230)
@@ -1003,7 +550,6 @@ MainFrame.Visible = false
 MainFrame.ZIndex = 10
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
-makeDraggable(MainFrame)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Thickness = 2
@@ -1014,15 +560,13 @@ MainGrad.Color = FRAME_BG_GRADIENT
 MainGrad.Rotation = 45
 MainGrad.Parent = MainFrame
 
+-- Rotating Gradients
 RunService.RenderStepped:Connect(function()
     MainGrad.Rotation = (MainGrad.Rotation + 0.2) % 360
     KeyGrad.Rotation = (KeyGrad.Rotation + 0.2) % 360
     PuzzleFrameGrad.Rotation = (PuzzleFrameGrad.Rotation + 0.2) % 360
     SpeedGuiGrad.Rotation = (SpeedGuiGrad.Rotation + 0.2) % 360
     MiniGameGrad.Rotation = (MiniGameGrad.Rotation + 0.2) % 360
-    ConnectDotsGrad.Rotation = (ConnectDotsGrad.Rotation + 0.2) % 360
-    TournamentGrad.Rotation = (TournamentGrad.Rotation + 0.2) % 360
-    AdminGrad.Rotation = (AdminGrad.Rotation + 0.2) % 360
 end)
 
 local TitleBar = Instance.new("Frame")
@@ -1036,7 +580,7 @@ local TitleText = Instance.new("TextLabel")
 TitleText.Size = UDim2.new(0.5, 0, 1, 0)
 TitleText.Position = UDim2.new(0, 18, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V4.0 — MASTER EDITION"
+TitleText.Text = "🦈 SHARK HUB V3.30 — BLUE EDITION"
 TitleText.TextColor3 = Color3.fromRGB(180, 235, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
@@ -1044,25 +588,37 @@ TitleText.TextSize = 16
 TitleText.ZIndex = 12
 TitleText.Parent = TitleBar
 
-local CloseMainHubBtn = Instance.new("TextButton")
-CloseMainHubBtn.Size = UDim2.new(0, 28, 0, 28)
-CloseMainHubBtn.Position = UDim2.new(1, -38, 0, 12)
-CloseMainHubBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-CloseMainHubBtn.Text = "X"
-CloseMainHubBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseMainHubBtn.Font = Enum.Font.GothamBold
-CloseMainHubBtn.TextSize = 13
-CloseMainHubBtn.ZIndex = 12
-CloseMainHubBtn.Parent = TitleBar
-Instance.new("UICorner", CloseMainHubBtn).CornerRadius = UDim.new(0, 8)
-
-setupMinimizeControl(MainFrame, CloseMainHubBtn)
-
-if IS_ADMIN then
+if IS_KEYLESS_USER then
     KeyFrame:Destroy()
     if PuzzleFrame then PuzzleFrame:Destroy() end
     MainFrame.Visible = true
 end
+
+-- Dragging Logic
+local dragging, dragInput, dragStart, startPos
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
 local ScrollingFrame = Instance.new("ScrollingFrame")
 ScrollingFrame.Size = UDim2.new(1, -24, 1, -68)
@@ -1116,6 +672,7 @@ local function CreateBlueButton(text, order, initialActive)
     return btn, stroke, grad
 end
 
+-- Key & Puzzle Actions
 SubmitBtn.MouseButton1Click:Connect(function()
     if VALID_KEYS[KeyBox.Text] then
         KeyFrame:Destroy()
@@ -1148,56 +705,68 @@ SubmitPuzzleBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- MAIN HUB FEATURES
+-- FULL BUTTON MATRIX CREATION
 --------------------------------------------------------------------------------
-local AutoRakeBtn, AutoRakeStroke, AutoRakeGrad = CreateBlueButton("🌾 Auto Farm THE_RAKE: OFF", 1, false)
+local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateBlueButton("🤖 AI BATTLE (THE_RAKE): OFF", 1, false)
 local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateBlueButton("⚔️ Fast Spam Clicker: OFF", 2, false)
-local GodModeBtn, GodModeStroke, GodModeGrad = CreateBlueButton("🛡️ God Mode / Anti-Damage: OFF", 3, false)
-local BringBossBtn, BringBossStroke, BringBossGrad = CreateBlueButton("🧲 Bring Boss To Player: OFF", 4, false)
-local HitboxBtn, HitboxStroke, HitboxGrad = CreateBlueButton("📦 Expand Target Hitbox: OFF", 5, false)
-local SpeedBtn, SpeedStroke, SpeedGrad = CreateBlueButton("⚡ Speed Boost (50 WalkSpeed): OFF", 6, false)
-local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateBlueButton("🎯 Trigger Bot: OFF", 7, false)
-local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateBlueButton("🎁 Auto Pickup Items: OFF", 8, false)
-local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateBlueButton("💥 FORCE DROP 1000%: OFF", 9, false)
+local BringBossBtn, BringBossStroke, BringBossGrad = CreateBlueButton("🧲 Bring Boss To Player: OFF", 3, false)
+local HitboxBtn, HitboxStroke, HitboxGrad = CreateBlueButton("📦 Expand Target Hitbox: OFF", 4, false)
+local SpeedBtn, SpeedStroke, SpeedGrad = CreateBlueButton("⚡ Speed Boost (50 WalkSpeed): OFF", 5, false)
+local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateBlueButton("🎯 Trigger Bot: OFF", 6, false)
+local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateBlueButton("🎁 Auto Pickup Items: OFF", 7, false)
+local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateBlueButton("💥 FORCE DROP 1000%: OFF", 8, false)
 
-local CalamityBtn, CalamityStroke, CalamityGrad = CreateBlueButton("🔥 CALAMITY TRIGGER MODE: OFF", 10, false)
-local ToolRenamerBtn, _, ToolRenamerGrad = CreateBlueButton("✏️ RENAME ALL TOOLS", 11, false)
-local MiniGameBtn, _, MiniGameBtnGrad = CreateBlueButton("🎮 OPEN MINI-GAME HUB", 12, false)
+local ToolRenamerBtn, _, ToolRenamerGrad = CreateBlueButton("✏️ RENAME ALL TOOLS", 9, false)
+local MiniGameBtn, _, MiniGameBtnGrad = CreateBlueButton("🎮 OPEN MINI-GAME", 10, false)
 
-local Luck250Btn, Luck250Stroke, Luck250Grad = CreateBlueButton("🍀 250% LUCK BOOST: OFF", 13, false)
-local Luck500Btn, Luck500Stroke, Luck500Grad = CreateBlueButton("🔥 500% LUCK BOOST: OFF", 14, false)
-local Luck750Btn, Luck750Stroke, Luck750Grad = CreateBlueButton("💎 750% LUCK BOOST: OFF", 15, false)
-local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateBlueButton("⚡ 1000% LUCKKYYY: OFF", 16, false)
+-- LUCK BOOST BUTTONS
+local Luck250Btn, Luck250Stroke, Luck250Grad = CreateBlueButton("🍀 250% LUCK BOOST: OFF", 11, false)
+local Luck500Btn, Luck500Stroke, Luck500Grad = CreateBlueButton("🔥 500% LUCK BOOST: OFF", 12, false)
+local Luck750Btn, Luck750Stroke, Luck750Grad = CreateBlueButton("💎 750% LUCK BOOST: OFF", 13, false)
+local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateBlueButton("⚡ 1000% LUCKKYYY: OFF", 14, false)
 
-local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 17, false)
-local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 18, false)
-local FlyingSharkBtn, FlyingSharkStroke, FlyingSharkGrad = CreateBlueButton("🦈 Flying Shark Companion: OFF", 19, false)
-local TPRakoofBtn, _, TPRakoofGrad = CreateBlueButton("🎯 Teleport To DOOFmmy", 20, false)
+local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateBlueButton("🚨 Auto Escape (20% HP): OFF", 15, false)
+local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateBlueButton("🧲 Bring Rakoof: OFF", 16, false)
 
+-- Toggle Menu Key
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == TOGGLE_KEY and MainFrame then
         MainFrame.Visible = not MainFrame.Visible
     end
 end)
 
-AutoRakeBtn.MouseButton1Click:Connect(function()
-    AUTO_RAKE_ENABLED = not AUTO_RAKE_ENABLED
-    AutoRakeBtn.Text = AUTO_RAKE_ENABLED and "🌾 Auto Farm THE_RAKE: ON" or "🌾 Auto Farm THE_RAKE: OFF"
-    AutoRakeGrad.Color = AUTO_RAKE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    AutoRakeStroke.Color = AUTO_RAKE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+--------------------------------------------------------------------------------
+-- FEATURE LOGIC
+--------------------------------------------------------------------------------
 
-    if AUTO_RAKE_ENABLED then
+-- UPDATED: AI Battle mode targeting THE_RAKE & invoking CalamityMAIN
+AIBattleBtn.MouseButton1Click:Connect(function()
+    AI_BATTLE_ENABLED = not AI_BATTLE_ENABLED
+    AIBattleBtn.Text = AI_BATTLE_ENABLED and "🤖 AI BATTLE (THE_RAKE): ON" or "🤖 AI BATTLE (THE_RAKE): OFF"
+    AIBattleGrad.Color = AI_BATTLE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
+    AIBattleStroke.Color = AI_BATTLE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
+
+    if AI_BATTLE_ENABLED then
         enableContinuousNoclip()
-        rakeLoop = RunService.Heartbeat:Connect(function()
+        triggerCalamityScript()
+
+        aiBattleLoop = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+            
             local _, rakePart = findTargetModel(RAKE_NAME)
-            local character = LocalPlayer.Character
-            if rakePart and character and character:FindFirstChild("HumanoidRootPart") then
-                character.HumanoidRootPart.CFrame = CFrame.new(rakePart.Position + Vector3.new(0, 2, 0), rakePart.Position)
-                executeFarmAttack()
+
+            if rakePart then
+                local angle = tick() * 12
+                local offset = Vector3.new(math.cos(angle) * 4, 3, math.sin(angle) * 4)
+                hrp.CFrame = CFrame.new(rakePart.Position + offset, rakePart.Position)
+                
+                executeSpamClick()
             end
         end)
     else
-        if rakeLoop then rakeLoop:Disconnect() rakeLoop = nil end
+        if aiBattleLoop then aiBattleLoop:Disconnect() aiBattleLoop = nil end
         disableContinuousNoclip()
     end
 end)
@@ -1215,24 +784,6 @@ AutoAttackBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-GodModeBtn.MouseButton1Click:Connect(function()
-    GODMODE_ENABLED = not GODMODE_ENABLED
-    GodModeBtn.Text = GODMODE_ENABLED and "🛡️ God Mode: ON" or "🛡️ God Mode / Anti-Damage: OFF"
-    GodModeGrad.Color = GODMODE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    GodModeStroke.Color = GODMODE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
-
-    if GODMODE_ENABLED then
-        godConnection = RunService.Stepped:Connect(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChildOfClass("Humanoid") then
-                char:FindFirstChildOfClass("Humanoid").Health = char:FindFirstChildOfClass("Humanoid").MaxHealth
-            end
-        end)
-    else
-        if godConnection then godConnection:Disconnect() godConnection = nil end
-    end
-end)
-
 BringBossBtn.MouseButton1Click:Connect(function()
     BRING_BOSS_ENABLED = not BRING_BOSS_ENABLED
     BringBossBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring Boss: ON" or "🧲 Bring Boss To Player: OFF"
@@ -1243,7 +794,7 @@ BringBossBtn.MouseButton1Click:Connect(function()
         bringLoop = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
-                local _, targetPart = findTargetModel(RAKE_NAME)
+                local targetModel, targetPart = findTargetModel(RAKE_NAME)
                 if targetPart then
                     targetPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
                 end
@@ -1363,33 +914,6 @@ ForceDropBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-CalamityBtn.MouseButton1Click:Connect(function()
-    CALAMITY_MODE_ENABLED = not CALAMITY_MODE_ENABLED
-    CalamityBtn.Text = CALAMITY_MODE_ENABLED and "🔥 CALAMITY MODE: ON" or "🔥 CALAMITY TRIGGER MODE: OFF"
-    CalamityGrad.Color = CALAMITY_MODE_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    CalamityStroke.Color = CALAMITY_MODE_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
-
-    if CALAMITY_MODE_ENABLED then
-        calamityLoop = RunService.RenderStepped:Connect(function()
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local hrp = char.HumanoidRootPart
-            
-            local _, targetPart = findTargetModel(RAKE_NAME)
-            if not targetPart then _, targetPart = findTargetModel(TARGET_NAME) end
-
-            if targetPart then
-                local angle = tick() * 12
-                local offset = Vector3.new(math.cos(angle) * 4, 3, math.sin(angle) * 4)
-                hrp.CFrame = CFrame.new(targetPart.Position + offset, targetPart.Position)
-                executeSpamClick()
-            end
-        end)
-    else
-        if calamityLoop then calamityLoop:Disconnect() calamityLoop = nil end
-    end
-end)
-
 ToolRenamerBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     local backpack = LocalPlayer:FindFirstChild("Backpack")
@@ -1411,16 +935,13 @@ ToolRenamerBtn.MouseButton1Click:Connect(function()
 end)
 
 MiniGameBtn.MouseButton1Click:Connect(function()
-    if miniGameScore < 50 then
-        MiniGameFrame.Visible = true
-        moveTarget()
-    elseif connectDotsWins < 10 then
-        ConnectDotsFrame.Visible = true
-    else
-        TournamentFrame.Visible = true
-    end
+    MiniGameFrame.Visible = true
+    moveTarget()
 end)
 
+--------------------------------------------------------------------------------
+-- LUCK BOOST TOGGLE LOGIC
+--------------------------------------------------------------------------------
 Luck250Btn.MouseButton1Click:Connect(function()
     LUCK_250_ENABLED = not LUCK_250_ENABLED
     Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% LUCK BOOST: ON" or "🍀 250% LUCK BOOST: OFF"
@@ -1533,108 +1054,4 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
     else
         if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
     end
-end)
-
---------------------------------------------------------------------------------
--- ADVANCED DETAILED SHARK COMPANION
---------------------------------------------------------------------------------
-local function CreateDetailedSharkCompanion()
-    local model = Instance.new("Model")
-    model.Name = "MasterSharkCompanion"
-
-    local root = Instance.new("Part")
-    root.Name = "HumanoidRootPart"
-    root.Size = Vector3.new(1, 1, 1)
-    root.Transparency = 1
-    root.CanCollide = false
-    root.Parent = model
-    model.PrimaryPart = root
-
-    local sharkColor = Color3.fromRGB(60, 120, 180)
-    local bellyColor = Color3.fromRGB(230, 235, 240)
-
-    local body = Instance.new("Part")
-    body.Size = Vector3.new(1.8, 1.5, 3.8)
-    body.Color = sharkColor
-    body.Material = Enum.Material.SmoothPlastic
-    body.CanCollide = false
-    body.Parent = model
-
-    local bodyMesh = Instance.new("SpecialMesh")
-    bodyMesh.MeshType = Enum.MeshType.Sphere
-    bodyMesh.Parent = body
-
-    local bodyWeld = Instance.new("Weld")
-    bodyWeld.Part0 = root
-    bodyWeld.Part1 = body
-    bodyWeld.Parent = body
-
-    local belly = Instance.new("Part")
-    belly.Size = Vector3.new(1.5, 0.9, 3.4)
-    belly.Color = bellyColor
-    belly.Material = Enum.Material.SmoothPlastic
-    belly.CanCollide = false
-    belly.Parent = model
-
-    local bellyMesh = Instance.new("SpecialMesh")
-    bellyMesh.MeshType = Enum.MeshType.Sphere
-    bellyMesh.Parent = belly
-
-    local bellyWeld = Instance.new("Weld")
-    bellyWeld.Part0 = body
-    bellyWeld.Part1 = belly
-    bellyWeld.C0 = CFrame.new(0, -0.3, 0)
-    bellyWeld.Parent = belly
-
-    local dorsal = Instance.new("WedgePart")
-    dorsal.Size = Vector3.new(0.3, 1.6, 1.6)
-    dorsal.Color = sharkColor
-    dorsal.Material = Enum.Material.SmoothPlastic
-    dorsal.CanCollide = false
-    dorsal.Parent = model
-
-    local dorsalWeld = Instance.new("Weld")
-    dorsalWeld.Part0 = body
-    dorsalWeld.Part1 = dorsal
-    dorsalWeld.C0 = CFrame.new(0, 1.3, 0.2) * CFrame.Angles(0, math.rad(180), 0)
-    dorsalWeld.Parent = dorsal
-
-    return model
-end
-
-FlyingSharkBtn.MouseButton1Click:Connect(function()
-    FLYING_SHARK_ENABLED = not FLYING_SHARK_ENABLED
-    FlyingSharkBtn.Text = FLYING_SHARK_ENABLED and "🦈 Flying Shark Companion: ON" or "🦈 Flying Shark Companion: OFF"
-    FlyingSharkGrad.Color = FLYING_SHARK_ENABLED and BLUE_ON_GRADIENT or BLUE_OFF_GRADIENT
-    FlyingSharkStroke.Color = FLYING_SHARK_ENABLED and Color3.fromRGB(150, 230, 255) or Color3.fromRGB(40, 90, 160)
-
-    if FLYING_SHARK_ENABLED then
-        local companion = CreateDetailedSharkCompanion()
-        companion.Parent = Workspace
-
-        local angle = 0
-        sharkLoop = RunService.RenderStepped:Connect(function(dt)
-            local char = LocalPlayer.Character
-            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-            local hrp = char.HumanoidRootPart
-            angle = angle + (dt * 3)
-            companion.PrimaryPart.CFrame = CFrame.new(hrp.Position + Vector3.new(math.cos(angle) * 6, 4 + math.sin(angle * 2) * 1.5, math.sin(angle) * 6), hrp.Position)
-        end)
-    else
-        if sharkLoop then sharkLoop:Disconnect() sharkLoop = nil end
-        local existing = Workspace:FindFirstChild("MasterSharkCompanion")
-        if existing then existing:Destroy() end
-    end
-end)
-
-TPRakoofBtn.MouseButton1Click:Connect(function()
-    local _, targetPart = findTargetModel(TARGET_NAME)
-    local character = LocalPlayer.Character
-    if targetPart and character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = targetPart.CFrame * CFrame.new(0, 0, 3.5)
-        TPRakoofBtn.Text = "✅ Teleported!"
-    else
-        TPRakoofBtn.Text = "❌ Not Found!"
-    end
-    task.delay(2, function() TPRakoofBtn.Text = "🎯 Teleport To DOOFmmy" end)
 end)
