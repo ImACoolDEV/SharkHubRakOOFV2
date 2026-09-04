@@ -95,7 +95,7 @@ local function findItemDropRemote()
     for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
             local nameLower = string.lower(obj.Name)
-            if string.find(nameLower, "itemdrop") or string.find(nameLower, "drop") or string.find(nameLower, "loot") or string.find(nameLower, "luck") then
+            if string.find(nameLower, "itemdrop") or string.find(nameLower, "drop") or string.find(nameLower, "loot") then
                 return obj
             end
         end
@@ -103,16 +103,8 @@ local function findItemDropRemote()
     return nil
 end
 
--- Trigger GiftRain and LootItem across workspace and ReplicatedStorage
+-- Modified: Trigger GiftRain and Loot for world/drops without applying Luck directly to LocalPlayer
 local function triggerGiftRainAndLoot(multiplier)
-    local remote = findItemDropRemote()
-    if remote then
-        pcall(function()
-            remote:FireServer("SetLuck", multiplier)
-            remote:FireServer({Luck = multiplier, Boost = true})
-        end)
-    end
-
     for _, obj in ipairs(game:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("BindableEvent") then
             local nameLower = string.lower(obj.Name)
@@ -120,7 +112,7 @@ local function triggerGiftRainAndLoot(multiplier)
                 pcall(function()
                     if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
                 end)
-            elseif nameLower == "lootitem" or string.find(nameLower, "lootitem") then
+            elseif (nameLower == "lootitem" or string.find(nameLower, "lootitem")) and not string.find(nameLower, "player") then
                 pcall(function()
                     if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
                 end)
@@ -813,10 +805,10 @@ local Spin30Btn, Spin30Stroke, Spin30Grad = CreateGalaxyButton("🎰 SPIN 30x: O
 local ToolRenamerBtn, _, ToolRenamerGrad = CreateGalaxyButton("✏️ RENAME ALL TOOLS", 11, false)
 local MiniGameBtn, _, MiniGameBtnGrad = CreateGalaxyButton("🎮 OPEN MINI-GAME", 12, false)
 
-local Luck250Btn, Luck250Stroke, Luck250Grad = CreateGalaxyButton("🍀 250% LUCK BOOST: OFF", 13, false)
-local Luck500Btn, Luck500Stroke, Luck500Grad = CreateGalaxyButton("🔥 500% LUCK BOOST: OFF", 14, false)
-local Luck750Btn, Luck750Stroke, Luck750Grad = CreateGalaxyButton("💎 750% LUCK BOOST: OFF", 15, false)
-local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateGalaxyButton("⚡ 1000% LUCKKYYY: OFF", 16, false)
+local Luck250Btn, Luck250Stroke, Luck250Grad = CreateGalaxyButton("🍀 250% WORLD LUCK: OFF", 13, false)
+local Luck500Btn, Luck500Stroke, Luck500Grad = CreateGalaxyButton("🔥 500% WORLD LUCK: OFF", 14, false)
+local Luck750Btn, Luck750Stroke, Luck750Grad = CreateGalaxyButton("💎 750% WORLD LUCK: OFF", 15, false)
+local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateGalaxyButton("⚡ 1000% WORLD LUCK: OFF", 16, false)
 
 local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateGalaxyButton("🚨 Auto Escape (20% HP): OFF", 17, false)
 local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateGalaxyButton("🧲 Bring Rakoof: OFF", 18, false)
@@ -874,7 +866,7 @@ AIBattleBtn.MouseButton1Click:Connect(function()
 
             if rakePart then
                 local angle = tick() * 12
-                local offset = Vector3.new(math.cos(angle) * 4, 3, math.sin(angle) * 4)
+                local offset = Vector3.new(math.cos(angle) * 8, 2, math.sin(angle) * 8)
                 hrp.CFrame = CFrame.new(rakePart.Position + offset, rakePart.Position)
                 
                 executeSpamClick()
@@ -973,6 +965,7 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Integrated Auto Pickup Loop with Touch/Proximity support
 AutoPickupBtn.MouseButton1Click:Connect(function()
     AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
     AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Auto Pickup: ON" or "🎁 Auto Pickup Items: OFF"
@@ -985,13 +978,30 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local hrp = char.HumanoidRootPart
 
-            for _, obj in ipairs(Workspace:GetChildren()) do
-                if obj:IsA("Tool") or obj:IsA("Model") then
+            for _, obj in ipairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") or obj:IsA("Tool") or obj:IsA("Model") then
+                    local matched = false
                     for _, itemName in ipairs(TARGET_ITEMS) do
                         if string.find(string.lower(obj.Name), string.lower(itemName)) then
-                            local part = obj:FindFirstChildWhichIsA("BasePart")
-                            if part then
-                                part.CFrame = hrp.CFrame
+                            matched = true
+                            break
+                        end
+                    end
+
+                    if matched then
+                        local targetPart = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
+                        if targetPart then
+                            targetPart.CFrame = hrp.CFrame
+                            
+                            local touchInterest = targetPart:FindFirstChildWhichIsA("TouchTransmitter", true) or obj:FindFirstChildWhichIsA("TouchTransmitter", true)
+                            if touchInterest and firetouchinterest then
+                                firetouchinterest(hrp, targetPart, 0)
+                                firetouchinterest(hrp, targetPart, 1)
+                            end
+
+                            local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                            if prompt and fireproximityprompt then
+                                fireproximityprompt(prompt)
                             end
                         end
                     end
@@ -1082,7 +1092,7 @@ end)
 
 Luck250Btn.MouseButton1Click:Connect(function()
     LUCK_250_ENABLED = not LUCK_250_ENABLED
-    Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% LUCK BOOST: ON" or "🍀 250% LUCK BOOST: OFF"
+    Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% WORLD LUCK: ON" or "🍀 250% WORLD LUCK: OFF"
     Luck250Grad.Color = LUCK_250_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
     Luck250Stroke.Color = LUCK_250_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
@@ -1100,7 +1110,7 @@ end)
 
 Luck500Btn.MouseButton1Click:Connect(function()
     LUCK_500_ENABLED = not LUCK_500_ENABLED
-    Luck500Btn.Text = LUCK_500_ENABLED and "🔥 500% LUCK BOOST: ON" or "🔥 500% LUCK BOOST: OFF"
+    Luck500Btn.Text = LUCK_500_ENABLED and "🔥 500% WORLD LUCK: ON" or "🔥 500% WORLD LUCK: OFF"
     Luck500Grad.Color = LUCK_500_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
     Luck500Stroke.Color = LUCK_500_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
@@ -1118,7 +1128,7 @@ end)
 
 Luck750Btn.MouseButton1Click:Connect(function()
     LUCK_750_ENABLED = not LUCK_750_ENABLED
-    Luck750Btn.Text = LUCK_750_ENABLED and "💎 750% LUCK BOOST: ON" or "💎 750% LUCK BOOST: OFF"
+    Luck750Btn.Text = LUCK_750_ENABLED and "💎 750% WORLD LUCK: ON" or "💎 750% WORLD LUCK: OFF"
     Luck750Grad.Color = LUCK_750_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
     Luck750Stroke.Color = LUCK_750_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
@@ -1136,7 +1146,7 @@ end)
 
 Luck1000Btn.MouseButton1Click:Connect(function()
     LUCK_1000_ENABLED = not LUCK_1000_ENABLED
-    Luck1000Btn.Text = LUCK_1000_ENABLED and "⚡ 1000% LUCKKYYY: ON" or "⚡ 1000% LUCKKYYY: OFF"
+    Luck1000Btn.Text = LUCK_1000_ENABLED and "⚡ 1000% WORLD LUCK: ON" or "⚡ 1000% WORLD LUCK: OFF"
     Luck1000Grad.Color = LUCK_1000_ENABLED and GALAXY_ON_GRADIENT or GALAXY_OFF_GRADIENT
     Luck1000Stroke.Color = LUCK_1000_ENABLED and Color3.fromRGB(220, 120, 255) or Color3.fromRGB(80, 40, 120)
 
