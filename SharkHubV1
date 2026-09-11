@@ -1,4 +1,4 @@
--- Shark Hub V3.45 | Sharky Ocean Edition (Loading Screen + Universal Auto Pickup + Luck + Force Drop + All Classic Buttons)
+-- Shark Hub V3.46 | Sharky Ocean Edition (Optimized Force Drop & Anti-Lag Cache)
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -84,51 +84,57 @@ local TARGET_ITEMS = {
     "CrucibleSword", "Imposta", "NullBlock", "TrainerCap"
 }
 
--- Utility: Find Item Drop / Remotes
-local function findItemDropRemote()
-    local itemDrop = ReplicatedStorage:FindFirstChild("ItemDrop", true) or Workspace:FindFirstChild("ItemDrop", true)
-    if itemDrop and (itemDrop:IsA("RemoteEvent") or itemDrop:IsA("UnreliableRemoteEvent")) then
-        return itemDrop
-    end
+--------------------------------------------------------------------------------
+-- OPTIMIZED REMOTE CACHING SYSTEM
+--------------------------------------------------------------------------------
+local cachedRemotes = {
+    GiftRain = {},
+    LootItem = {},
+    ItemDrop = {},
+    Spin = {}
+}
 
-    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-        if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
-            local nameLower = string.lower(obj.Name)
-            if string.find(nameLower, "itemdrop") or string.find(nameLower, "drop") or string.find(nameLower, "loot") then
-                return obj
-            end
-        end
-    end
-    return nil
-end
+local function updateRemoteCache()
+    table.clear(cachedRemotes.GiftRain)
+    table.clear(cachedRemotes.LootItem)
+    table.clear(cachedRemotes.ItemDrop)
+    table.clear(cachedRemotes.Spin)
 
-local function triggerGiftRainAndLoot(multiplier)
     for _, obj in ipairs(game:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("BindableEvent") then
             local nameLower = string.lower(obj.Name)
+            
             if nameLower == "giftrain" or string.find(nameLower, "giftrain") then
-                pcall(function()
-                    if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
-                end)
+                table.insert(cachedRemotes.GiftRain, obj)
             elseif (nameLower == "lootitem" or string.find(nameLower, "lootitem")) and not string.find(nameLower, "player") then
-                pcall(function()
-                    if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
-                end)
+                table.insert(cachedRemotes.LootItem, obj)
+            elseif string.find(nameLower, "itemdrop") or string.find(nameLower, "drop") then
+                table.insert(cachedRemotes.ItemDrop, obj)
+            elseif string.find(nameLower, "spin") or string.find(nameLower, "crate") or string.find(nameLower, "wheel") or string.find(nameLower, "roll") then
+                table.insert(cachedRemotes.Spin, obj)
             end
         end
     end
 end
 
-local function findSpinRemote()
-    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-        if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") then
-            local nameLower = string.lower(obj.Name)
-            if string.find(nameLower, "spin") or string.find(nameLower, "crate") or string.find(nameLower, "wheel") or string.find(nameLower, "roll") then
-                return obj
-            end
-        end
+updateRemoteCache()
+
+local function triggerGiftRainAndLoot(multiplier)
+    if #cachedRemotes.GiftRain == 0 and #cachedRemotes.LootItem == 0 then
+        updateRemoteCache()
     end
-    return nil
+
+    for _, obj in ipairs(cachedRemotes.GiftRain) do
+        pcall(function()
+            if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
+        end)
+    end
+
+    for _, obj in ipairs(cachedRemotes.LootItem) do
+        pcall(function()
+            if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
+        end)
+    end
 end
 
 local function findTargetModel(query)
@@ -275,7 +281,7 @@ local LoadingTitle = Instance.new("TextLabel")
 LoadingTitle.Size = UDim2.new(1, 0, 0, 45)
 LoadingTitle.Position = UDim2.new(0, 0, 0, 10)
 LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "🦈 SHARK HUB V3.45"
+LoadingTitle.Text = "🦈 SHARK HUB V3.46"
 LoadingTitle.TextColor3 = Color3.fromRGB(0, 225, 255)
 LoadingTitle.Font = Enum.Font.GothamBold
 LoadingTitle.TextSize = 20
@@ -328,7 +334,7 @@ LoadingPercent.Parent = LoadingGui
 task.spawn(function()
     local stages = {
         {percent = 0.2, text = "Bypassing Anti-Cheat..."},
-        {percent = 0.5, text = "Hooking Event Listeners..."},
+        {percent = 0.5, text = "Hooking Event Listeners & TS Remotes..."},
         {percent = 0.8, text = "Loading Modules & Auto-Pickup..."},
         {percent = 1.0, text = "Shark Hub Ready!"}
     }
@@ -569,7 +575,7 @@ CloseMiniGame.MouseButton1Click:Connect(function()
     MiniGameFrame.Visible = false
 end)
 
--- Key Authentication Frame (Streamlined)
+-- Key Authentication Frame
 local KeyFrame = Instance.new("Frame")
 KeyFrame.Size = UDim2.new(0, 420, 0, 190)
 KeyFrame.Position = UDim2.new(0.5, -210, 0.5, -95)
@@ -637,6 +643,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false
 MainFrame.ZIndex = 10
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
 
@@ -665,16 +672,61 @@ TitleBar.Parent = MainFrame
 Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 16)
 
 local TitleText = Instance.new("TextLabel")
-TitleText.Size = UDim2.new(0.6, 0, 1, 0)
+TitleText.Size = UDim2.new(0.5, 0, 1, 0)
 TitleText.Position = UDim2.new(0, 18, 0, 0)
 TitleText.BackgroundTransparency = 1
-TitleText.Text = "🦈 SHARK HUB V3.45 — OCEAN EDITION"
+TitleText.Text = "🦈 SHARK HUB V3.46 — OCEAN EDITION"
 TitleText.TextColor3 = Color3.fromRGB(180, 230, 255)
 TitleText.TextXAlignment = Enum.TextXAlignment.Left
 TitleText.Font = Enum.Font.GothamBold
 TitleText.TextSize = 16
 TitleText.ZIndex = 12
 TitleText.Parent = TitleBar
+
+--------------------------------------------------------------------------------
+-- TITLE BAR CONTROLS (- and X Buttons)
+--------------------------------------------------------------------------------
+local ScrollingFrame = Instance.new("ScrollingFrame")
+
+-- Orange Minimize Button (-)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Size = UDim2.new(0, 32, 0, 32)
+MinimizeBtn.Position = UDim2.new(1, -82, 0.5, -16)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(245, 150, 60)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 18
+MinimizeBtn.ZIndex = 13
+MinimizeBtn.Parent = TitleBar
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 8)
+
+-- Red Close Button (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -44, 0.5, -16)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(235, 75, 80)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.ZIndex = 13
+CloseBtn.Parent = TitleBar
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+
+local isMinimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    ScrollingFrame.Visible = not isMinimized
+    MainFrame.Size = isMinimized and UDim2.new(0, 740, 0, 52) or UDim2.new(0, 740, 0, 460)
+    MinimizeBtn.Text = isMinimized and "+" or "-"
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
 
 if IS_KEYLESS_USER then
     KeyFrame:Destroy()
@@ -706,7 +758,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-local ScrollingFrame = Instance.new("ScrollingFrame")
 ScrollingFrame.Size = UDim2.new(1, -24, 1, -68)
 ScrollingFrame.Position = UDim2.new(0, 12, 0, 58)
 ScrollingFrame.BackgroundTransparency = 1
@@ -770,7 +821,7 @@ SubmitBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- BUTTON MATRIX (ALL CLASSIC & NEW FEATURES)
+-- BUTTON MATRIX
 --------------------------------------------------------------------------------
 local TriggerCalamityBtn, _, TriggerCalamityGrad = CreateSharkButton("⚡ TRIGGER CALAMITY MODE", 1, false)
 local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateSharkButton("🤖 AI BATTLE (The_Rake): OFF", 2, false)
@@ -946,7 +997,6 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- UNIVERSAL AUTO-PICKUP INTEGRATION
 AutoPickupBtn.MouseButton1Click:Connect(function()
     AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
     AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Universal Auto Pickup: ON" or "🎁 Universal Auto Pickup: OFF"
@@ -959,7 +1009,6 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local hrp = char.HumanoidRootPart
 
-            -- 1. Pickup Target List Items & Dropped Tools in Workspace
             for _, obj in ipairs(Workspace:GetChildren()) do
                 if obj:IsA("Tool") or obj:IsA("Model") then
                     local isTarget = false
@@ -989,7 +1038,6 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
                 end
             end
 
-            -- 2. Automatically Trigger Proximity Prompts
             if fireproximityprompt then
                 for _, prompt in ipairs(Workspace:GetDescendants()) do
                     if prompt:IsA("ProximityPrompt") and prompt.Enabled then
@@ -1010,18 +1058,51 @@ ForceDropBtn.MouseButton1Click:Connect(function()
     ForceDropStroke.Color = FORCE_DROP_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
     
     if FORCE_DROP_ENABLED then
+        updateRemoteCache()
+        
         forceDropLoop = task.spawn(function()
+            local loopCount = 0
             while FORCE_DROP_ENABLED do
-                local itemDropRemote = findItemDropRemote()
-                if itemDropRemote then
+                loopCount = loopCount + 1
+                if loopCount % 15 == 0 then updateRemoteCache() end
+
+                for _, remote in ipairs(cachedRemotes.GiftRain) do
                     pcall(function()
-                        for _, itemName in ipairs(TARGET_ITEMS) do
-                            itemDropRemote:FireServer(itemName, 1000, true)
-                            itemDropRemote:FireServer({Item = itemName, Rate = 1000, Force = true})
+                        if remote:IsA("BindableEvent") then
+                            remote:Fire(1000)
+                        else
+                            remote:FireServer(1000)
+                            remote:FireServer({Amount = 1000, Force = true})
                         end
                     end)
                 end
-                task.wait(0.1)
+
+                for _, remote in ipairs(cachedRemotes.LootItem) do
+                    pcall(function()
+                        for _, itemName in ipairs(TARGET_ITEMS) do
+                            if remote:IsA("BindableEvent") then
+                                remote:Fire(itemName, 1000)
+                            else
+                                remote:FireServer(itemName, 1000)
+                                remote:FireServer({Item = itemName, Amount = 1000, Force = true})
+                            end
+                        end
+                    end)
+                end
+
+                for _, remote in ipairs(cachedRemotes.ItemDrop) do
+                    pcall(function()
+                        for _, itemName in ipairs(TARGET_ITEMS) do
+                            if remote:IsA("BindableEvent") then
+                                remote:Fire(itemName, 1000)
+                            else
+                                remote:FireServer(itemName, 1000, true)
+                            end
+                        end
+                    end)
+                end
+
+                task.wait(0.35)
             end
         end)
     else
@@ -1038,16 +1119,17 @@ Spin30Btn.MouseButton1Click:Connect(function()
     if SPIN_30_ENABLED then
         spin30Loop = task.spawn(function()
             while SPIN_30_ENABLED do
-                local spinRemote = findSpinRemote()
-                if spinRemote then
+                if #cachedRemotes.Spin == 0 then updateRemoteCache() end
+                
+                for _, spinRemote in ipairs(cachedRemotes.Spin) do
                     pcall(function()
-                        for _ = 1, 30 do
+                        for _ = 1, 10 do
                             spinRemote:FireServer("Spin")
                             spinRemote:FireServer({Amount = 1})
                         end
                     end)
                 end
-                task.wait(0.3)
+                task.wait(0.35)
             end
         end)
     else
@@ -1090,7 +1172,7 @@ Luck250Btn.MouseButton1Click:Connect(function()
         luck250Loop = task.spawn(function()
             while LUCK_250_ENABLED do
                 triggerGiftRainAndLoot(2.5)
-                task.wait(0.2)
+                task.wait(0.35)
             end
         end)
     else
@@ -1108,7 +1190,7 @@ Luck500Btn.MouseButton1Click:Connect(function()
         luck500Loop = task.spawn(function()
             while LUCK_500_ENABLED do
                 triggerGiftRainAndLoot(5.0)
-                task.wait(0.2)
+                task.wait(0.35)
             end
         end)
     else
@@ -1126,7 +1208,7 @@ Luck750Btn.MouseButton1Click:Connect(function()
         luck750Loop = task.spawn(function()
             while LUCK_750_ENABLED do
                 triggerGiftRainAndLoot(7.5)
-                task.wait(0.2)
+                task.wait(0.35)
             end
         end)
     else
@@ -1144,7 +1226,7 @@ Luck1000Btn.MouseButton1Click:Connect(function()
         luck1000Loop = task.spawn(function()
             while LUCK_1000_ENABLED do
                 triggerGiftRainAndLoot(10.0)
-                task.wait(0.1)
+                task.wait(0.3)
             end
         end)
     else
@@ -1195,7 +1277,7 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- HYPER-RELIABLE JUGGERNAUT BATON MODIFIER LOOP (TREBTREBALT3)
+-- JUGGERNAUT BATON MODIFIER LOOP
 --------------------------------------------------------------------------------
 local TARGET_PLAYER_NAME = "trebtrebalt3"
 
