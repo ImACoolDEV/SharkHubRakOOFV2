@@ -47,7 +47,7 @@ local RAKE_NAME = "The_Rake"
 
 local VALID_KEYS = {
     ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
-    ["SHARK-HUB-VIP-2026-KEY99"] = true,
+    ["Weekly-SHARKHUB-KEY-1"] = true,
     ["ALPHA-PREMIUM-ACCESS-7731"] = true
 }
 
@@ -63,6 +63,27 @@ local AUTO_ESCAPE_ENABLED = false
 local BRING_RAKOOF_ENABLED = false
 local FORCE_DROP_ENABLED = false
 local SPIN_30_ENABLED = false
+
+-- Whitelist & Blacklist Config
+local USE_WHITELIST = true
+local USE_BLACKLIST = true
+
+local PICKUP_WHITELIST = {
+    ["GoldenApple"] = true,
+    ["LegendaryEnergy"] = true,
+    ["IgnitionFlame"] = true,
+    ["CrucibleSword"] = true,
+    ["CorruptedHalo"] = true
+    ["BurnedBone"] = true
+    ["SnowFlakes"] = true
+    ["NullBlock"] = true
+}
+
+local PICKUP_BLACKLIST = {
+    ["Mesh"] = true,
+    ["Meshes"] = true,
+    ["PenguinPart"] = true
+}
 
 -- Luck Boost States
 local LUCK_250_ENABLED = false
@@ -846,6 +867,10 @@ local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateSharkButton("⚡ 1000% W
 local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateSharkButton("🚨 Auto Escape (20% HP): OFF", 17, false)
 local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateSharkButton("🧲 Bring Rakoof: OFF", 18, false)
 
+local StaminaBtn, _, StaminaGrad = CreateSharkButton("⚡ MAX STAMINA (SET REMOTES)", 19, false)
+local PredictDropBtn, _, PredictDropGrad = CreateSharkButton("🔮 CHECK NEXT ITEM DROP", 20, false)
+local PickupFilterBtn, PickupFilterStroke, PickupFilterGrad = CreateSharkButton("🎯 PICKUP FILTER (WHITE/BLACK): ON", 21, true)
+
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe then
         if input.KeyCode == TOGGLE_KEY and MainFrame then
@@ -997,6 +1022,84 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+--------------------------------------------------------------------------------
+-- STAMINA REMOTE TRIGGER
+--------------------------------------------------------------------------------
+StaminaBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        local remotesFolder = ReplicatedStorage:FindFirstChild("PlayerRemotes")
+        if remotesFolder and remotesFolder:FindFirstChild("SetStaminaValues") then
+            local Event = remotesFolder.SetStaminaValues
+            if firesignal then
+                firesignal(Event.OnClientEvent, 100, 15, 42, 999999)
+                StaminaBtn.Text = "✅ STAMINA BOOSTED!"
+            else
+                StaminaBtn.Text = "⚠️ MISSING FIRESIGNAL SUPPORT"
+            end
+        else
+            StaminaBtn.Text = "⚠️ STAMINA REMOTE NOT FOUND"
+        end
+    end)
+
+    task.delay(2, function()
+        StaminaBtn.Text = "⚡ MAX STAMINA (SET REMOTES)"
+    end)
+end)
+
+--------------------------------------------------------------------------------
+-- NEXT DROP PREDICTOR / INSPECTOR
+--------------------------------------------------------------------------------
+local function checkNextDrop()
+    local predictedItem = "Unknown / Random"
+    
+    -- Check ReplicatedStorage drop queues / values
+    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+        if obj:IsA("StringValue") or obj:IsA("ObjectValue") then
+            local lowerName = string.lower(obj.Name)
+            if string.find(lowerName, "nextdrop") or string.find(lowerName, "queuedrop") or string.find(lowerName, "upcomingitem") then
+                predictedItem = tostring(obj.Value)
+                break
+            end
+        end
+    end
+
+    -- Fallback: Check Workspace drop containers
+    if predictedItem == "Unknown / Random" then
+        local dropSpawns = Workspace:FindFirstChild("ItemSpawns") or Workspace:FindFirstChild("Drops")
+        if dropSpawns then
+            local children = dropSpawns:GetChildren()
+            if #children > 0 then
+                predictedItem = children[#children].Name
+            end
+        end
+    end
+
+    return predictedItem
+end
+
+PredictDropBtn.MouseButton1Click:Connect(function()
+    local nextItem = checkNextDrop()
+    PredictDropBtn.Text = "🔮 NEXT DROP: " .. string.upper(nextItem)
+    
+    task.delay(3, function()
+        PredictDropBtn.Text = "🔮 CHECK NEXT ITEM DROP"
+    end)
+end)
+
+--------------------------------------------------------------------------------
+-- PICKUP FILTER TOGGLE
+--------------------------------------------------------------------------------
+PickupFilterBtn.MouseButton1Click:Connect(function()
+    USE_WHITELIST = not USE_WHITELIST
+    USE_BLACKLIST = USE_WHITELIST
+    PickupFilterBtn.Text = USE_WHITELIST and "🎯 PICKUP FILTER (WHITE/BLACK): ON" or "🎯 PICKUP FILTER (WHITE/BLACK): OFF"
+    PickupFilterGrad.Color = USE_WHITELIST and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    PickupFilterStroke.Color = USE_WHITELIST and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+end)
+
+--------------------------------------------------------------------------------
+-- ENHANCED AUTO PICKUP WITH WHITELIST & BLACKLIST FILTERING
+--------------------------------------------------------------------------------
 AutoPickupBtn.MouseButton1Click:Connect(function()
     AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
     AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Universal Auto Pickup: ON" or "🎁 Universal Auto Pickup: OFF"
@@ -1011,15 +1114,31 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
 
             for _, obj in ipairs(Workspace:GetChildren()) do
                 if obj:IsA("Tool") or obj:IsA("Model") then
-                    local isTarget = false
-                    for _, itemName in ipairs(TARGET_ITEMS) do
-                        if string.find(string.lower(obj.Name), string.lower(itemName)) then
-                            isTarget = true
-                            break
+                    local itemName = obj.Name
+                    local shouldPickup = false
+
+                    -- Whitelist / Blacklist check logic
+                    if USE_WHITELIST and next(PICKUP_WHITELIST) ~= nil then
+                        for wItem, _ in pairs(PICKUP_WHITELIST) do
+                            if string.find(string.lower(itemName), string.lower(wItem)) then
+                                shouldPickup = true
+                                break
+                            end
+                        end
+                    else
+                        shouldPickup = true
+                    end
+
+                    if USE_BLACKLIST and next(PICKUP_BLACKLIST) ~= nil then
+                        for bItem, _ in pairs(PICKUP_BLACKLIST) do
+                            if string.find(string.lower(itemName), string.lower(bItem)) then
+                                shouldPickup = false
+                                break
+                            end
                         end
                     end
-                    
-                    if isTarget or obj:IsA("Tool") then
+
+                    if shouldPickup then
                         local handle = obj:FindFirstChild("Handle") or obj:FindFirstChildWhichIsA("BasePart")
                         if handle then
                             if firetouchinterest then
