@@ -988,4 +988,216 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
             local _, bossRoot = findTargetModel(RAKE_NAME)
             if not bossRoot then _, bossRoot = findTargetModel(TARGET_NAME) end
 
-            if bossRoot and (hrp.Position - bossRoot.Position).Magnitude
+            if bossRoot and (hrp.Position - bossRoot.Position).Magnitude <= 15 then
+                executeSpamClick()
+            end
+        end)
+    else
+        if triggerBotConnection then
+            triggerBotConnection:Disconnect()
+            triggerBotConnection = nil
+        end
+    end
+end)
+
+AutoPickupBtn.MouseButton1Click:Connect(function()
+    AUTO_PICKUP_ENABLED = not AUTO_PICKUP_ENABLED
+    AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Universal Auto Pickup: ON" or "🎁 Universal Auto Pickup: OFF"
+    AutoPickupGrad.Color = AUTO_PICKUP_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    AutoPickupStroke.Color = AUTO_PICKUP_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+
+    if AUTO_PICKUP_ENABLED then
+        pickupLoop = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+
+            for _, item in ipairs(Workspace:GetDescendants()) do
+                if item:IsA("BasePart") then
+                    for _, targetName in ipairs(TARGET_ITEMS) do
+                        if string.find(string.lower(item.Name), string.lower(targetName)) then
+                            if (hrp.Position - item.Position).Magnitude <= 50 then
+                                item.CFrame = hrp.CFrame
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        if pickupLoop then
+            pickupLoop:Disconnect()
+            pickupLoop = nil
+        end
+    end
+end)
+
+ForceDropBtn.MouseButton1Click:Connect(function()
+    FORCE_DROP_ENABLED = not FORCE_DROP_ENABLED
+    ForceDropBtn.Text = FORCE_DROP_ENABLED and "💥 FORCE DROP 1000%: ON" or "💥 FORCE DROP 1000%: OFF"
+    ForceDropGrad.Color = FORCE_DROP_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    ForceDropStroke.Color = FORCE_DROP_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+
+    if FORCE_DROP_ENABLED then
+        forceDropLoop = task.spawn(function()
+            while FORCE_DROP_ENABLED do
+                triggerGiftRainAndLoot(10)
+                for _, dropEvent in ipairs(cachedRemotes.ItemDrop) do
+                    pcall(function() dropEvent:FireServer(1000) end)
+                end
+                task.wait(0.2)
+            end
+        end)
+    else
+        if forceDropLoop then
+            task.cancel(forceDropLoop)
+            forceDropLoop = nil
+        end
+    end
+end)
+
+Spin30Btn.MouseButton1Click:Connect(function()
+    SPIN_30_ENABLED = not SPIN_30_ENABLED
+    Spin30Btn.Text = SPIN_30_ENABLED and "🎰 SPIN 30x: ON" or "🎰 SPIN 30x: OFF"
+    Spin30Grad.Color = SPIN_30_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    Spin30Stroke.Color = SPIN_30_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+
+    if SPIN_30_ENABLED then
+        spin30Loop = task.spawn(function()
+            while SPIN_30_ENABLED do
+                for _, spinEvent in ipairs(cachedRemotes.Spin) do
+                    pcall(function()
+                        if spinEvent:IsA("BindableEvent") then spinEvent:Fire(30) else spinEvent:FireServer(30) end
+                    end)
+                end
+                task.wait(1)
+            end
+        end)
+    else
+        if spin30Loop then
+            task.cancel(spin30Loop)
+            spin30Loop = nil
+        end
+    end
+end)
+
+ToolRenamerBtn.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+    
+    local function renameToolsInContainer(container)
+        if not container then return end
+        for _, item in ipairs(container:GetChildren()) do
+            if item:IsA("Tool") then
+                item.Name = "🦈 Shark Blade"
+            end
+        end
+    end
+
+    renameToolsInContainer(char)
+    renameToolsInContainer(backpack)
+    
+    ToolRenamerBtn.Text = "✏️ TOOLS RENAMED!"
+    task.delay(2, function()
+        ToolRenamerBtn.Text = "✏️ RENAME ALL TOOLS"
+    end)
+end)
+
+MiniGameBtn.MouseButton1Click:Connect(function()
+    MiniGameFrame.Visible = not MiniGameFrame.Visible
+end)
+
+-- World Luck Multipliers Helpers
+local function toggleLuck(tier, stateVar, btn, stroke, grad)
+    if tier == 250 then LUCK_250_ENABLED = stateVar end
+    if tier == 500 then LUCK_500_ENABLED = stateVar end
+    if tier == 750 then LUCK_750_ENABLED = stateVar end
+    if tier == 1000 then LUCK_1000_ENABLED = stateVar end
+
+    btn.Text = stateVar and ("⚡ " .. tostring(tier) .. "% WORLD LUCK: ON") or ("⚡ " .. tostring(tier) .. "% WORLD LUCK: OFF")
+    grad.Color = stateVar and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    stroke.Color = stateVar and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+    
+    local mult = (tier / 100)
+    if stateVar then
+        task.spawn(function()
+            while true do
+                if tier == 250 and not LUCK_250_ENABLED then break end
+                if tier == 500 and not LUCK_500_ENABLED then break end
+                if tier == 750 and not LUCK_750_ENABLED then break end
+                if tier == 1000 and not LUCK_1000_ENABLED then break end
+
+                triggerGiftRainAndLoot(mult)
+                task.wait(0.5)
+            end
+        end)
+    end
+end
+
+Luck250Btn.MouseButton1Click:Connect(function()
+    LUCK_250_ENABLED = not LUCK_250_ENABLED
+    toggleLuck(250, LUCK_250_ENABLED, Luck250Btn, Luck250Stroke, Luck250Grad)
+end)
+
+Luck500Btn.MouseButton1Click:Connect(function()
+    LUCK_500_ENABLED = not LUCK_500_ENABLED
+    toggleLuck(500, LUCK_500_ENABLED, Luck500Btn, Luck500Stroke, Luck500Grad)
+end)
+
+Luck750Btn.MouseButton1Click:Connect(function()
+    LUCK_750_ENABLED = not LUCK_750_ENABLED
+    toggleLuck(750, LUCK_750_ENABLED, Luck750Btn, Luck750Stroke, Luck750Grad)
+end)
+
+Luck1000Btn.MouseButton1Click:Connect(function()
+    LUCK_1000_ENABLED = not LUCK_1000_ENABLED
+    toggleLuck(1000, LUCK_1000_ENABLED, Luck1000Btn, Luck1000Stroke, Luck1000Grad)
+end)
+
+AutoEscapeBtn.MouseButton1Click:Connect(function()
+    AUTO_ESCAPE_ENABLED = not AUTO_ESCAPE_ENABLED
+    AutoEscapeBtn.Text = AUTO_ESCAPE_ENABLED and "🚨 Auto Escape: ON" or "🚨 Auto Escape (20% HP): OFF"
+    AutoEscapeGrad.Color = AUTO_ESCAPE_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    AutoEscapeStroke.Color = AUTO_ESCAPE_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+
+    if AUTO_ESCAPE_ENABLED then
+        escapeConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum.Health > 0 and (hum.Health / hum.MaxHealth) <= 0.2 then
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, 150, 0)
+                end
+            end
+        end)
+    else
+        if escapeConnection then
+            escapeConnection:Disconnect()
+            escapeConnection = nil
+        end
+    end
+end)
+
+BringRakoofBtn.MouseButton1Click:Connect(function()
+    BRING_RAKOOF_ENABLED = not BRING_RAKOOF_ENABLED
+    BringRakoofBtn.Text = BRING_RAKOOF_ENABLED and "🧲 Bring Rakoof: ON" or "🧲 Bring Rakoof: OFF"
+    BringRakoofGrad.Color = BRING_RAKOOF_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    BringRakoofStroke.Color = BRING_RAKOOF_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+
+    if BRING_RAKOOF_ENABLED then
+        bringRakoofLoop = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local _, rakoofPart = findTargetModel(RAKE_NAME)
+                if rakoofPart then
+                    rakoofPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                end
+            end
+        end)
+    else
+        if bringRakoofLoop then
+            bringRakoofLoop:Disconnect()
+            bringRakoofLoop = nil
+        end
+    end
+end)
