@@ -1,4 +1,4 @@
--- Shark Hub V3.46 | Sharky Ocean Edition (Optimized Force Drop & Anti-Lag Cache)
+-- Shark Hub V3.46 | Sharky Ocean Edition + Full Key System 🦈
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -11,7 +11,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Banned User Guard (Fixed unassigned variables)
+-- Banned User Guard
 local BANNED_USER_ID = nil
 local BANNED_USERNAME = nil
 
@@ -38,18 +38,25 @@ if (BANNED_USER_ID and LocalPlayer.UserId == BANNED_USER_ID) or (BANNED_USERNAME
     return
 end
 
--- Key Bypass Check
+-- Key Bypass Check for Owner/Staff
 local IS_KEYLESS_USER = (LocalPlayer.UserId == 9603761866 or LocalPlayer.Name == "trebtrebalt3")
+
+-- 25 Valid Keys List
+local VALID_KEYS = {
+    ["SHARK-KEY-9A1B"] = true, ["SHARK-KEY-3C4D"] = true, ["SHARK-KEY-5E6F"] = true,
+    ["SHARK-KEY-7G8H"] = true, ["SHARK-KEY-9I0J"] = true, ["SHARK-KEY-1K2L"] = true,
+    ["SHARK-KEY-3M4N"] = true, ["SHARK-KEY-5O6P"] = true, ["SHARK-KEY-7Q8R"] = true,
+    ["SHARK-KEY-9S0T"] = true, ["SHARK-KEY-1U2V"] = true, ["SHARK-KEY-3W4X"] = true,
+    ["SHARK-KEY-5Y6Z"] = true, ["SHARK-KEY-7A8B"] = true, ["SHARK-KEY-9C0D"] = true,
+    ["SHARK-KEY-2E1F"] = true, ["SHARK-KEY-4G3H"] = true, ["SHARK-KEY-6I5J"] = true,
+    ["SHARK-KEY-8K7L"] = true, ["SHARK-KEY-0M9N"] = true, ["SHARK-KEY-2O1P"] = true,
+    ["SHARK-KEY-4Q3R"] = true, ["SHARK-KEY-6S5T"] = true, ["SHARK-KEY-8U7V"] = true,
+    ["SHARK-KEY-STAFF"] = true
+}
 
 -- State & Key Variables
 local TARGET_NAME = "DOOFmmy"
 local RAKE_NAME = "The_Rake"
-
-local VALID_KEYS = {
-    ["xK9#mQ8$vL2_zP5!wX7*bN4-yH1%tR3&jF6"] = true,
-    ["Weekly-SHARKHUB-KEY-1"] = true,
-    ["ALPHA-PREMIUM-ACCESS-7731"] = true
-}
 
 -- States
 local AI_BATTLE_ENABLED = false
@@ -75,7 +82,6 @@ local QUICK_TOGGLE_KEY = Enum.KeyCode.X
 
 -- Connection Variables
 local aiBattleLoop, attackLoop, bringLoop, hitboxLoop, noclipConnection, pickupLoop, triggerBotConnection, escapeConnection, bringRakoofLoop, forceDropLoop, spin30Loop
-local luck250Loop, luck500Loop, luck750Loop, luck1000Loop
 
 local TARGET_ITEMS = {
     "GoldenApple", "LegendaryEnergy", "IgnitionFlame", 
@@ -103,7 +109,6 @@ local function updateRemoteCache()
     for _, obj in ipairs(game:GetDescendants()) do
         if obj:IsA("RemoteEvent") or obj:IsA("UnreliableRemoteEvent") or obj:IsA("BindableEvent") then
             local nameLower = string.lower(obj.Name)
-            
             if nameLower == "giftrain" or string.find(nameLower, "giftrain") then
                 table.insert(cachedRemotes.GiftRain, obj)
             elseif (nameLower == "lootitem" or string.find(nameLower, "lootitem")) and not string.find(nameLower, "player") then
@@ -123,13 +128,11 @@ local function triggerGiftRainAndLoot(multiplier)
     if #cachedRemotes.GiftRain == 0 and #cachedRemotes.LootItem == 0 then
         updateRemoteCache()
     end
-
     for _, obj in ipairs(cachedRemotes.GiftRain) do
         pcall(function()
             if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
         end)
     end
-
     for _, obj in ipairs(cachedRemotes.LootItem) do
         pcall(function()
             if obj:IsA("BindableEvent") then obj:Fire(multiplier) else obj:FireServer(multiplier) end
@@ -146,7 +149,6 @@ local function findTargetModel(query)
                 or obj:FindFirstChild("LowerTorso")
                 or obj.PrimaryPart
                 or obj:FindFirstChildWhichIsA("BasePart")
-
             if targetPart then return obj, targetPart end
         end
     end
@@ -156,13 +158,10 @@ end
 local function executeSpamClick()
     VirtualUser:Button1Down(Vector2.zero, Workspace.CurrentCamera.CFrame)
     VirtualUser:Button1Up(Vector2.zero, Workspace.CurrentCamera.CFrame)
-    
     local character = LocalPlayer.Character
     if character then
         local equippedTool = character:FindFirstChildOfClass("Tool")
-        if equippedTool then 
-            equippedTool:Activate() 
-        end
+        if equippedTool then equippedTool:Activate() end
     end
 end
 
@@ -174,18 +173,12 @@ local function triggerCalamityInsideRake()
             break
         end
     end
-
-    if not rakeModel then
-        warn("The_Rake model not found in Workspace!")
-        return 0
-    end
+    if not rakeModel then return 0 end
 
     local triggeredCount = 0
-
     for _, target in ipairs(rakeModel:GetDescendants()) do
         if target.Name == "MainCalamity" or target.Name == "CalamityMAIN" then
             triggeredCount = triggeredCount + 1
-            
             if target:IsA("RemoteEvent") or target:IsA("UnreliableRemoteEvent") then
                 pcall(function() target:FireServer() end)
             elseif target:IsA("BindableEvent") then
@@ -193,11 +186,8 @@ local function triggerCalamityInsideRake()
             elseif target:IsA("ModuleScript") then
                 pcall(function() 
                     local loadedModule = require(target)
-                    if type(loadedModule) == "function" then
-                        loadedModule()
-                    elseif type(loadedModule) == "table" and loadedModule.Init then
-                        loadedModule.Init()
-                    end
+                    if type(loadedModule) == "function" then loadedModule()
+                    elseif type(loadedModule) == "table" and loadedModule.Init then loadedModule.Init() end
                 end)
             elseif target:IsA("Script") or target:IsA("LocalScript") then
                 target.Disabled = false
@@ -205,7 +195,6 @@ local function triggerCalamityInsideRake()
             end
         end
     end
-
     return triggeredCount
 end
 
@@ -229,7 +218,7 @@ local function disableContinuousNoclip()
 end
 
 --------------------------------------------------------------------------------
--- SHARK OCEAN THEME GRADIENTS & COLOR DEFINITIONS
+-- UI THEME & GUI SETUP
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SharkHubV3_Sharky"
@@ -255,105 +244,7 @@ local SHARK_FRAME_GRADIENT = ColorSequence.new({
     ColorSequenceKeypoint.new(1, Color3.fromRGB(3, 8, 18))
 })
 
---------------------------------------------------------------------------------
--- ANIMATED SHARK LOADING SCREEN
---------------------------------------------------------------------------------
-local LoadingGui = Instance.new("Frame")
-LoadingGui.Name = "SharkLoadingScreen"
-LoadingGui.Size = UDim2.new(0, 380, 0, 180)
-LoadingGui.Position = UDim2.new(0.5, -190, 0.5, -90)
-LoadingGui.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-LoadingGui.BorderSizePixel = 0
-LoadingGui.ZIndex = 200
-LoadingGui.Parent = ScreenGui
-Instance.new("UICorner", LoadingGui).CornerRadius = UDim.new(0, 14)
-
-local LoadingStroke = Instance.new("UIStroke", LoadingGui)
-LoadingStroke.Thickness = 2
-LoadingStroke.Color = Color3.fromRGB(0, 210, 255)
-
-local LoadingGrad = Instance.new("UIGradient")
-LoadingGrad.Color = SHARK_FRAME_GRADIENT
-LoadingGrad.Rotation = 45
-LoadingGrad.Parent = LoadingGui
-
-local LoadingTitle = Instance.new("TextLabel")
-LoadingTitle.Size = UDim2.new(1, 0, 0, 45)
-LoadingTitle.Position = UDim2.new(0, 0, 0, 10)
-LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "🦈 SHARK HUB V3.46"
-LoadingTitle.TextColor3 = Color3.fromRGB(0, 225, 255)
-LoadingTitle.Font = Enum.Font.GothamBold
-LoadingTitle.TextSize = 20
-LoadingTitle.ZIndex = 201
-LoadingTitle.Parent = LoadingGui
-
-local LoadingSub = Instance.new("TextLabel")
-LoadingSub.Size = UDim2.new(1, 0, 0, 25)
-LoadingSub.Position = UDim2.new(0, 0, 0, 50)
-LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "Initializing Shark Engine & Remotes..."
-LoadingSub.TextColor3 = Color3.fromRGB(150, 220, 255)
-LoadingSub.Font = Enum.Font.GothamMedium
-LoadingSub.TextSize = 12
-LoadingSub.ZIndex = 201
-LoadingSub.Parent = LoadingGui
-
-local ProgressBarBg = Instance.new("Frame")
-ProgressBarBg.Size = UDim2.new(0.85, 0, 0, 16)
-ProgressBarBg.Position = UDim2.new(0.075, 0, 0, 105)
-ProgressBarBg.BackgroundColor3 = Color3.fromRGB(8, 20, 38)
-ProgressBarBg.BorderSizePixel = 0
-ProgressBarBg.ZIndex = 201
-ProgressBarBg.Parent = LoadingGui
-Instance.new("UICorner", ProgressBarBg).CornerRadius = UDim.new(0, 8)
-
-local ProgressBarFill = Instance.new("Frame")
-ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
-ProgressBarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ProgressBarFill.BorderSizePixel = 0
-ProgressBarFill.ZIndex = 202
-ProgressBarFill.Parent = ProgressBarBg
-Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(0, 8)
-
-local FillGrad = Instance.new("UIGradient")
-FillGrad.Color = SHARK_ON_GRADIENT
-FillGrad.Parent = ProgressBarFill
-
-local LoadingPercent = Instance.new("TextLabel")
-LoadingPercent.Size = UDim2.new(1, 0, 0, 20)
-LoadingPercent.Position = UDim2.new(0, 0, 0, 130)
-LoadingPercent.BackgroundTransparency = 1
-LoadingPercent.Text = "0%"
-LoadingPercent.TextColor3 = Color3.fromRGB(0, 210, 255)
-LoadingPercent.Font = Enum.Font.GothamBold
-LoadingPercent.TextSize = 12
-LoadingPercent.ZIndex = 201
-LoadingPercent.Parent = LoadingGui
-
-task.spawn(function()
-    local stages = {
-        {percent = 0.2, text = "Bypassing Anti-Cheat..."},
-        {percent = 0.5, text = "Hooking Event Listeners & TS Remotes..."},
-        {percent = 0.8, text = "Loading Modules & Auto-Pickup..."},
-        {percent = 1.0, text = "Shark Hub Ready!"}
-    }
-    
-    for _, stage in ipairs(stages) do
-        LoadingSub.Text = stage.text
-        TweenService:Create(ProgressBarFill, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(stage.percent, 0, 1, 0)}):Play()
-        LoadingPercent.Text = tostring(math.floor(stage.percent * 100)) .. "%"
-        task.wait(0.45)
-    end
-    
-    task.wait(0.3)
-    TweenService:Create(LoadingGui, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    LoadingGui:Destroy()
-end)
-
---------------------------------------------------------------------------------
--- TOP SHARK CIRCLE BUTTON
---------------------------------------------------------------------------------
+-- Top Circle Button
 local TopCircleBtn = Instance.new("TextButton")
 TopCircleBtn.Name = "TopSharkCircle"
 TopCircleBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -365,248 +256,43 @@ TopCircleBtn.Visible = false
 TopCircleBtn.ZIndex = 80
 TopCircleBtn.Parent = ScreenGui
 Instance.new("UICorner", TopCircleBtn).CornerRadius = UDim.new(1, 0)
-
 local CircleStroke = Instance.new("UIStroke", TopCircleBtn)
 CircleStroke.Thickness = 2
 CircleStroke.Color = Color3.fromRGB(0, 210, 255)
-
-local CircleGrad = Instance.new("UIGradient")
+local CircleGrad = Instance.new("UIGradient", TopCircleBtn)
 CircleGrad.Color = SHARK_ON_GRADIENT
 CircleGrad.Rotation = 45
-CircleGrad.Parent = TopCircleBtn
-
---------------------------------------------------------------------------------
--- WALKSPEED CHANGER GUI
---------------------------------------------------------------------------------
-local SpeedGuiFrame = Instance.new("Frame")
-SpeedGuiFrame.Size = UDim2.new(0, 180, 0, 90)
-SpeedGuiFrame.Position = UDim2.new(1, -190, 0, 20)
-SpeedGuiFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-SpeedGuiFrame.BorderSizePixel = 0
-SpeedGuiFrame.ZIndex = 50
-SpeedGuiFrame.Parent = ScreenGui
-Instance.new("UICorner", SpeedGuiFrame).CornerRadius = UDim.new(0, 10)
-
-local SpeedGuiStroke = Instance.new("UIStroke", SpeedGuiFrame)
-SpeedGuiStroke.Thickness = 1.5
-SpeedGuiStroke.Color = Color3.fromRGB(0, 210, 255)
-
-local SpeedGuiGrad = Instance.new("UIGradient")
-SpeedGuiGrad.Color = SHARK_FRAME_GRADIENT
-SpeedGuiGrad.Rotation = 45
-SpeedGuiGrad.Parent = SpeedGuiFrame
-
-local SpeedTitle = Instance.new("TextLabel")
-SpeedTitle.Size = UDim2.new(1, 0, 0, 22)
-SpeedTitle.Position = UDim2.new(0, 0, 0, 4)
-SpeedTitle.BackgroundTransparency = 1
-SpeedTitle.Text = "⚡ SPEED CHANGER"
-SpeedTitle.TextColor3 = Color3.fromRGB(180, 230, 255)
-SpeedTitle.Font = Enum.Font.GothamBold
-SpeedTitle.TextSize = 11
-SpeedTitle.ZIndex = 51
-SpeedTitle.Parent = SpeedGuiFrame
-
-local speedDragging, speedDragInput, speedDragStart, speedStartPos
-
-SpeedTitle.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        speedDragging = true
-        speedDragStart = input.Position
-        speedStartPos = SpeedGuiFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then speedDragging = false end
-        end)
-    end
-end)
-
-SpeedTitle.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        speedDragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == speedDragInput and speedDragging then
-        local delta = input.Position - speedDragStart
-        SpeedGuiFrame.Position = UDim2.new(speedStartPos.X.Scale, speedStartPos.X.Offset + delta.X, speedStartPos.Y.Scale, speedStartPos.Y.Offset + delta.Y)
-    end
-end)
-
-local SpeedBox = Instance.new("TextBox")
-SpeedBox.Size = UDim2.new(0.85, 0, 0, 26)
-SpeedBox.Position = UDim2.new(0.075, 0, 0, 28)
-SpeedBox.BackgroundColor3 = Color3.fromRGB(8, 20, 38)
-SpeedBox.Text = "16"
-SpeedBox.PlaceholderText = "Speed..."
-SpeedBox.TextColor3 = Color3.fromRGB(0, 220, 255)
-SpeedBox.Font = Enum.Font.GothamBold
-SpeedBox.TextSize = 12
-SpeedBox.ZIndex = 51
-SpeedBox.Parent = SpeedGuiFrame
-Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 6)
-
-local ApplySpeedBtn = Instance.new("TextButton")
-ApplySpeedBtn.Size = UDim2.new(0.85, 0, 0, 22)
-ApplySpeedBtn.Position = UDim2.new(0.075, 0, 0, 58)
-ApplySpeedBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-ApplySpeedBtn.Text = "SET SPEED"
-ApplySpeedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ApplySpeedBtn.Font = Enum.Font.GothamBold
-ApplySpeedBtn.TextSize = 10
-ApplySpeedBtn.ZIndex = 51
-ApplySpeedBtn.Parent = SpeedGuiFrame
-Instance.new("UICorner", ApplySpeedBtn).CornerRadius = UDim.new(0, 6)
-
-local ApplySpeedGrad = Instance.new("UIGradient")
-ApplySpeedGrad.Color = SHARK_ON_GRADIENT
-ApplySpeedGrad.Rotation = 90
-ApplySpeedGrad.Parent = ApplySpeedBtn
-
-ApplySpeedBtn.MouseButton1Click:Connect(function()
-    local val = tonumber(SpeedBox.Text)
-    if val then
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChildOfClass("Humanoid") then
-            char:FindFirstChildOfClass("Humanoid").WalkSpeed = val
-        end
-    end
-end)
-
---------------------------------------------------------------------------------
--- MINI-GAME: SHARK ATTACK CLICKER
---------------------------------------------------------------------------------
-local MiniGameFrame = Instance.new("Frame")
-MiniGameFrame.Size = UDim2.new(0, 320, 0, 240)
-MiniGameFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
-MiniGameFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MiniGameFrame.BorderSizePixel = 0
-MiniGameFrame.Visible = false
-MiniGameFrame.ZIndex = 60
-MiniGameFrame.Parent = ScreenGui
-Instance.new("UICorner", MiniGameFrame).CornerRadius = UDim.new(0, 12)
-
-local MiniGameStroke = Instance.new("UIStroke", MiniGameFrame)
-MiniGameStroke.Thickness = 2
-MiniGameStroke.Color = Color3.fromRGB(0, 210, 255)
-
-local MiniGameGrad = Instance.new("UIGradient")
-MiniGameGrad.Color = SHARK_FRAME_GRADIENT
-MiniGameGrad.Rotation = 45
-MiniGameGrad.Parent = MiniGameFrame
-
-local MiniGameTitle = Instance.new("TextLabel")
-MiniGameTitle.Size = UDim2.new(1, -30, 0, 30)
-MiniGameTitle.Position = UDim2.new(0, 10, 0, 5)
-MiniGameTitle.BackgroundTransparency = 1
-MiniGameTitle.Text = "🦈 SHARK MINI-GAME"
-MiniGameTitle.TextColor3 = Color3.fromRGB(180, 230, 255)
-MiniGameTitle.Font = Enum.Font.GothamBold
-MiniGameTitle.TextSize = 12
-MiniGameTitle.TextXAlignment = Enum.TextXAlignment.Left
-MiniGameTitle.ZIndex = 61
-MiniGameTitle.Parent = MiniGameFrame
-
-local CloseMiniGame = Instance.new("TextButton")
-CloseMiniGame.Size = UDim2.new(0, 24, 0, 24)
-CloseMiniGame.Position = UDim2.new(1, -28, 0, 6)
-CloseMiniGame.BackgroundColor3 = Color3.fromRGB(200, 40, 80)
-CloseMiniGame.Text = "X"
-CloseMiniGame.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseMiniGame.Font = Enum.Font.GothamBold
-CloseMiniGame.TextSize = 12
-CloseMiniGame.ZIndex = 62
-CloseMiniGame.Parent = MiniGameFrame
-Instance.new("UICorner", CloseMiniGame).CornerRadius = UDim.new(0, 6)
-
-local ScoreLabel = Instance.new("TextLabel")
-ScoreLabel.Size = UDim2.new(1, 0, 0, 20)
-ScoreLabel.Position = UDim2.new(0, 0, 0, 32)
-ScoreLabel.BackgroundTransparency = 1
-ScoreLabel.Text = "Score: 0"
-ScoreLabel.TextColor3 = Color3.fromRGB(0, 210, 255)
-ScoreLabel.Font = Enum.Font.GothamBold
-ScoreLabel.TextSize = 13
-ScoreLabel.ZIndex = 61
-ScoreLabel.Parent = MiniGameFrame
-
-local MiniGameArea = Instance.new("Frame")
-MiniGameArea.Size = UDim2.new(0.9, 0, 0.7, 0)
-MiniGameArea.Position = UDim2.new(0.05, 0, 0.24, 0)
-MiniGameArea.BackgroundColor3 = Color3.fromRGB(8, 20, 38)
-MiniGameArea.BorderSizePixel = 0
-MiniGameArea.ClipsDescendants = true
-MiniGameArea.ZIndex = 61
-MiniGameArea.Parent = MiniGameFrame
-Instance.new("UICorner", MiniGameArea).CornerRadius = UDim.new(0, 8)
-
-local TargetBtn = Instance.new("TextButton")
-TargetBtn.Size = UDim2.new(0, 36, 0, 36)
-TargetBtn.Position = UDim2.new(0.4, 0, 0.4, 0)
-TargetBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TargetBtn.Text = "🦈"
-TargetBtn.TextSize = 20
-TargetBtn.ZIndex = 62
-TargetBtn.Parent = MiniGameArea
-Instance.new("UICorner", TargetBtn).CornerRadius = UDim.new(1, 0)
-
-local TargetGrad = Instance.new("UIGradient")
-TargetGrad.Color = SHARK_ON_GRADIENT
-TargetGrad.Parent = TargetBtn
-
-local miniGameScore = 0
-local function moveTarget()
-    local maxX = MiniGameArea.AbsoluteSize.X - TargetBtn.AbsoluteSize.X
-    local maxY = MiniGameArea.AbsoluteSize.Y - TargetBtn.AbsoluteSize.Y
-    if maxX > 0 and maxY > 0 then
-        local randX = math.random(0, math.floor(maxX))
-        local randY = math.random(0, math.floor(maxY))
-        TargetBtn.Position = UDim2.new(0, randX, 0, randY)
-    end
-end
-
-TargetBtn.MouseButton1Click:Connect(function()
-    miniGameScore = miniGameScore + 1
-    ScoreLabel.Text = "Score: " .. tostring(miniGameScore)
-    moveTarget()
-end)
-
-CloseMiniGame.MouseButton1Click:Connect(function()
-    MiniGameFrame.Visible = false
-end)
 
 -- Key Authentication Frame
 local KeyFrame = Instance.new("Frame")
-KeyFrame.Size = UDim2.new(0, 420, 0, 190)
-KeyFrame.Position = UDim2.new(0.5, -210, 0.5, -95)
+KeyFrame.Size = UDim2.new(0, 440, 0, 250)
+KeyFrame.Position = UDim2.new(0.5, -220, 0.5, -125)
 KeyFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 KeyFrame.BorderSizePixel = 0
-KeyFrame.ZIndex = 2
+KeyFrame.ZIndex = 200
 KeyFrame.Parent = ScreenGui
 Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 14)
 
 local KeyStroke = Instance.new("UIStroke", KeyFrame)
 KeyStroke.Thickness = 2
 KeyStroke.Color = Color3.fromRGB(0, 210, 255)
-
-local KeyGrad = Instance.new("UIGradient")
+local KeyGrad = Instance.new("UIGradient", KeyFrame)
 KeyGrad.Color = SHARK_FRAME_GRADIENT
 KeyGrad.Rotation = 45
-KeyGrad.Parent = KeyFrame
 
 local KeyTitle = Instance.new("TextLabel")
 KeyTitle.Size = UDim2.new(1, 0, 0, 45)
 KeyTitle.BackgroundTransparency = 1
-KeyTitle.Text = "🦈 SHARK HUB — OCEAN ACCESS"
+KeyTitle.Text = "🦈 SHARK HUB — KEY SYSTEM"
 KeyTitle.TextColor3 = Color3.fromRGB(180, 230, 255)
 KeyTitle.Font = Enum.Font.GothamBold
-KeyTitle.TextSize = 14
-KeyTitle.ZIndex = 3
+KeyTitle.TextSize = 15
+KeyTitle.ZIndex = 201
 KeyTitle.Parent = KeyFrame
 
 local KeyBox = Instance.new("TextBox")
-KeyBox.Size = UDim2.new(0.88, 0, 0, 42)
-KeyBox.Position = UDim2.new(0.06, 0, 0, 65)
+KeyBox.Size = UDim2.new(0.88, 0, 0, 40)
+KeyBox.Position = UDim2.new(0.06, 0, 0, 55)
 KeyBox.BackgroundColor3 = Color3.fromRGB(8, 20, 38)
 KeyBox.Text = ""
 KeyBox.PlaceholderText = "Enter key here..."
@@ -614,26 +300,61 @@ KeyBox.PlaceholderColor3 = Color3.fromRGB(100, 180, 220)
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 KeyBox.Font = Enum.Font.GothamBold
 KeyBox.TextSize = 12
-KeyBox.ZIndex = 3
+KeyBox.ZIndex = 201
 KeyBox.Parent = KeyFrame
 Instance.new("UICorner", KeyBox).CornerRadius = UDim.new(0, 8)
 
 local SubmitBtn = Instance.new("TextButton")
-SubmitBtn.Size = UDim2.new(0.88, 0, 0, 42)
-SubmitBtn.Position = UDim2.new(0.06, 0, 0, 120)
+SubmitBtn.Size = UDim2.new(0.88, 0, 0, 38)
+SubmitBtn.Position = UDim2.new(0.06, 0, 0, 105)
 SubmitBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-SubmitBtn.Text = "AUTHENTICATE"
+SubmitBtn.Text = "VERIFY KEY"
 SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SubmitBtn.Font = Enum.Font.GothamBold
 SubmitBtn.TextSize = 13
-SubmitBtn.ZIndex = 3
+SubmitBtn.ZIndex = 201
 SubmitBtn.Parent = KeyFrame
 Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 8)
-
-local SubmitGrad = Instance.new("UIGradient")
+local SubmitGrad = Instance.new("UIGradient", SubmitBtn)
 SubmitGrad.Color = SHARK_ON_GRADIENT
 SubmitGrad.Rotation = 90
-SubmitGrad.Parent = SubmitBtn
+
+-- Discord Link Button with Clipboard Copy
+local DiscordBtn = Instance.new("TextButton")
+DiscordBtn.Size = UDim2.new(0.88, 0, 0, 38)
+DiscordBtn.Position = UDim2.new(0.06, 0, 0, 153)
+DiscordBtn.BackgroundColor3 = Color3.fromRGB(15, 35, 65)
+DiscordBtn.Text = "COPY DISCORD LINK"
+DiscordBtn.TextColor3 = Color3.fromRGB(0, 210, 255)
+DiscordBtn.Font = Enum.Font.GothamBold
+DiscordBtn.TextSize = 12
+DiscordBtn.ZIndex = 201
+DiscordBtn.Parent = KeyFrame
+Instance.new("UICorner", DiscordBtn).CornerRadius = UDim.new(0, 8)
+local DiscordStroke = Instance.new("UIStroke", DiscordBtn)
+DiscordStroke.Color = Color3.fromRGB(0, 210, 255)
+DiscordStroke.Thickness = 1.5
+
+local KeyNotice = Instance.new("TextLabel")
+KeyNotice.Size = UDim2.new(1, 0, 0, 20)
+KeyNotice.Position = UDim2.new(0, 0, 0, 200)
+KeyNotice.BackgroundTransparency = 1
+KeyNotice.Text = "Join discord.gg/P9Nyas69Rq to get a valid key!"
+KeyNotice.TextColor3 = Color3.fromRGB(150, 200, 230)
+KeyNotice.Font = Enum.Font.GothamMedium
+KeyNotice.TextSize = 11
+KeyNotice.ZIndex = 201
+KeyNotice.Parent = KeyFrame
+
+DiscordBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard("https://discord.gg/P9Nyas69Rq")
+        DiscordBtn.Text = "COPIED DISCORD LINK!"
+        task.delay(2, function() DiscordBtn.Text = "COPY DISCORD LINK" end)
+    else
+        DiscordBtn.Text = "discord.gg/P9Nyas69Rq"
+    end
+end)
 
 -- Main Hub Window
 local MainFrame = Instance.new("Frame")
@@ -650,17 +371,13 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 16)
 local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Thickness = 2
 MainStroke.Color = Color3.fromRGB(0, 210, 255)
-
-local MainGrad = Instance.new("UIGradient")
+local MainGrad = Instance.new("UIGradient", MainFrame)
 MainGrad.Color = SHARK_FRAME_GRADIENT
 MainGrad.Rotation = 45
-MainGrad.Parent = MainFrame
 
 RunService.RenderStepped:Connect(function()
     MainGrad.Rotation = (MainGrad.Rotation + 0.3) % 360
     KeyGrad.Rotation = (KeyGrad.Rotation + 0.3) % 360
-    SpeedGuiGrad.Rotation = (SpeedGuiGrad.Rotation + 0.3) % 360
-    MiniGameGrad.Rotation = (MiniGameGrad.Rotation + 0.3) % 360
     CircleGrad.Rotation = (CircleGrad.Rotation + 0.6) % 360
 end)
 
@@ -683,14 +400,10 @@ TitleText.TextSize = 16
 TitleText.ZIndex = 12
 TitleText.Parent = TitleBar
 
---------------------------------------------------------------------------------
--- TITLE BAR CONTROLS (- and X Buttons)
---------------------------------------------------------------------------------
 local ScrollingFrame = Instance.new("ScrollingFrame")
 
--- Orange Minimize Button (-)
+-- Minimize Button (-)
 local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Name = "MinimizeBtn"
 MinimizeBtn.Size = UDim2.new(0, 32, 0, 32)
 MinimizeBtn.Position = UDim2.new(1, -82, 0.5, -16)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(245, 150, 60)
@@ -702,9 +415,8 @@ MinimizeBtn.ZIndex = 13
 MinimizeBtn.Parent = TitleBar
 Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 8)
 
--- Red Close Button (X)
+-- Close Button (X)
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Name = "CloseBtn"
 CloseBtn.Size = UDim2.new(0, 32, 0, 32)
 CloseBtn.Position = UDim2.new(1, -44, 0.5, -16)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(235, 75, 80)
@@ -733,6 +445,18 @@ if IS_KEYLESS_USER then
     MainFrame.Visible = true
 end
 
+SubmitBtn.MouseButton1Click:Connect(function()
+    if VALID_KEYS[KeyBox.Text] then
+        KeyFrame:Destroy()
+        MainFrame.Visible = true
+    else
+        KeyBox.Text = ""
+        KeyBox.PlaceholderText = "Invalid Key! Join Discord"
+        task.delay(1.5, function() KeyBox.PlaceholderText = "Enter key here..." end)
+    end
+end)
+
+-- Window Dragging Handler
 local dragging, dragInput, dragStart, startPos
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -790,10 +514,9 @@ local function CreateSharkButton(text, order, initialActive)
     btn.Parent = ScrollingFrame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
     
-    local grad = Instance.new("UIGradient")
+    local grad = Instance.new("UIGradient", btn)
     grad.Color = initialActive and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     grad.Rotation = 90
-    grad.Parent = btn
 
     local stroke = Instance.new("UIStroke", btn)
     stroke.Thickness = 1.5
@@ -809,21 +532,10 @@ local function CreateSharkButton(text, order, initialActive)
     return btn, stroke, grad
 end
 
-SubmitBtn.MouseButton1Click:Connect(function()
-    if VALID_KEYS[KeyBox.Text] then
-        KeyFrame:Destroy()
-        MainFrame.Visible = true
-    else
-        KeyBox.Text = ""
-        KeyBox.PlaceholderText = "Invalid Key!"
-        task.delay(1.5, function() KeyBox.PlaceholderText = "Enter key here..." end)
-    end
-end)
-
 --------------------------------------------------------------------------------
--- BUTTON MATRIX
+-- BUTTON MATRIX & FEATURES
 --------------------------------------------------------------------------------
-local TriggerCalamityBtn, _, TriggerCalamityGrad = CreateSharkButton("⚡ TRIGGER CALAMITY MODE", 1, false)
+local TriggerCalamityBtn, _, _ = CreateSharkButton("⚡ TRIGGER CALAMITY MODE", 1, false)
 local AIBattleBtn, AIBattleStroke, AIBattleGrad = CreateSharkButton("🤖 AI BATTLE (The_Rake): OFF", 2, false)
 local AutoAttackBtn, AutoAttackStroke, AutoAttackGrad = CreateSharkButton("⚔️ Fast Spam Clicker: OFF", 3, false)
 local BringBossBtn, BringBossStroke, BringBossGrad = CreateSharkButton("🧲 Bring Boss To Player: OFF", 4, false)
@@ -832,17 +544,13 @@ local SpeedBtn, SpeedStroke, SpeedGrad = CreateSharkButton("⚡ Speed Boost (50 
 local TriggerBotBtn, TriggerBotStroke, TriggerBotGrad = CreateSharkButton("🎯 Trigger Bot: OFF", 7, false)
 local AutoPickupBtn, AutoPickupStroke, AutoPickupGrad = CreateSharkButton("🎁 Universal Auto Pickup: OFF", 8, false)
 local ForceDropBtn, ForceDropStroke, ForceDropGrad = CreateSharkButton("💥 FORCE DROP 1000%: OFF", 9, false)
-
 local Spin30Btn, Spin30Stroke, Spin30Grad = CreateSharkButton("🎰 SPIN 30x: OFF", 10, false)
-
-local ToolRenamerBtn, _, ToolRenamerGrad = CreateSharkButton("✏️ RENAME ALL TOOLS", 11, false)
-local MiniGameBtn, _, MiniGameBtnGrad = CreateSharkButton("🎮 OPEN MINI-GAME", 12, false)
-
+local ToolRenamerBtn, _, _ = CreateSharkButton("✏️ RENAME ALL TOOLS", 11, false)
+local MiniGameBtn, _, _ = CreateSharkButton("🎮 OPEN MINI-GAME", 12, false)
 local Luck250Btn, Luck250Stroke, Luck250Grad = CreateSharkButton("🍀 250% WORLD LUCK: OFF", 13, false)
 local Luck500Btn, Luck500Stroke, Luck500Grad = CreateSharkButton("🔥 500% WORLD LUCK: OFF", 14, false)
 local Luck750Btn, Luck750Stroke, Luck750Grad = CreateSharkButton("💎 750% WORLD LUCK: OFF", 15, false)
 local Luck1000Btn, Luck1000Stroke, Luck1000Grad = CreateSharkButton("⚡ 1000% WORLD LUCK: OFF", 16, false)
-
 local AutoEscapeBtn, AutoEscapeStroke, AutoEscapeGrad = CreateSharkButton("🚨 Auto Escape (20% HP): OFF", 17, false)
 local BringRakoofBtn, BringRakoofStroke, BringRakoofGrad = CreateSharkButton("🧲 Bring Rakoof: OFF", 18, false)
 
@@ -857,26 +565,14 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 end)
 
 TopCircleBtn.MouseButton1Click:Connect(function()
-    if MainFrame then
-        MainFrame.Visible = not MainFrame.Visible
-    end
+    if MainFrame then MainFrame.Visible = not MainFrame.Visible end
 end)
 
---------------------------------------------------------------------------------
--- FEATURE LOGIC
---------------------------------------------------------------------------------
-
+-- Feature Logic Bindings
 TriggerCalamityBtn.MouseButton1Click:Connect(function()
     local count = triggerCalamityInsideRake()
-    if count > 0 then
-        TriggerCalamityBtn.Text = "⚡ ACTIVATED (" .. tostring(count) .. " TRIGGERED)"
-    else
-        TriggerCalamityBtn.Text = "⚠️ MAIN CALAMITY NOT FOUND IN RAKE"
-    end
-    
-    task.delay(2.5, function()
-        TriggerCalamityBtn.Text = "⚡ TRIGGER CALAMITY MODE"
-    end)
+    TriggerCalamityBtn.Text = count > 0 and ("⚡ ACTIVATED (" .. count .. " TRIGGERED)") or "⚠️ MAIN CALAMITY NOT FOUND"
+    task.delay(2.5, function() TriggerCalamityBtn.Text = "⚡ TRIGGER CALAMITY MODE" end)
 end)
 
 AIBattleBtn.MouseButton1Click:Connect(function()
@@ -884,23 +580,18 @@ AIBattleBtn.MouseButton1Click:Connect(function()
     AIBattleBtn.Text = AI_BATTLE_ENABLED and "🤖 AI BATTLE (The_Rake): ON" or "🤖 AI BATTLE (The_Rake): OFF"
     AIBattleGrad.Color = AI_BATTLE_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     AIBattleStroke.Color = AI_BATTLE_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if AI_BATTLE_ENABLED then
         enableContinuousNoclip()
         triggerCalamityInsideRake()
-
         aiBattleLoop = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local hrp = char.HumanoidRootPart
-            
             local _, rakePart = findTargetModel(RAKE_NAME)
-
             if rakePart then
                 local angle = tick() * 12
                 local offset = Vector3.new(math.cos(angle) * 8, 2, math.sin(angle) * 8)
                 hrp.CFrame = CFrame.new(rakePart.Position + offset, rakePart.Position)
-                
                 executeSpamClick()
             end
         end)
@@ -915,7 +606,6 @@ AutoAttackBtn.MouseButton1Click:Connect(function()
     AutoAttackBtn.Text = AUTO_ATTACK_ENABLED and "⚔️ Fast Spam Clicker: ON" or "⚔️ Fast Spam Clicker: OFF"
     AutoAttackGrad.Color = AUTO_ATTACK_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     AutoAttackStroke.Color = AUTO_ATTACK_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if AUTO_ATTACK_ENABLED then
         attackLoop = RunService.RenderStepped:Connect(function() executeSpamClick() end)
     else
@@ -928,15 +618,12 @@ BringBossBtn.MouseButton1Click:Connect(function()
     BringBossBtn.Text = BRING_BOSS_ENABLED and "🧲 Bring Boss: ON" or "🧲 Bring Boss To Player: OFF"
     BringBossGrad.Color = BRING_BOSS_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     BringBossStroke.Color = BRING_BOSS_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if BRING_BOSS_ENABLED then
         bringLoop = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
-                local targetModel, targetPart = findTargetModel(RAKE_NAME)
-                if targetPart then
-                    targetPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
-                end
+                local _, targetPart = findTargetModel(RAKE_NAME)
+                if targetPart then targetPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end
             end
         end)
     else
@@ -949,7 +636,6 @@ HitboxBtn.MouseButton1Click:Connect(function()
     HitboxBtn.Text = EXPAND_HITBOX_ENABLED and "📦 Expand Hitbox: ON" or "📦 Expand Target Hitbox: OFF"
     HitboxGrad.Color = EXPAND_HITBOX_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     HitboxStroke.Color = EXPAND_HITBOX_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if EXPAND_HITBOX_ENABLED then
         hitboxLoop = RunService.Heartbeat:Connect(function()
             local _, rakePart = findTargetModel(RAKE_NAME)
@@ -967,7 +653,6 @@ SpeedBtn.MouseButton1Click:Connect(function()
     SpeedBtn.Text = SPEED_BOOST_ENABLED and "⚡ Speed Boost: ON" or "⚡ Speed Boost (50 WalkSpeed): OFF"
     SpeedGrad.Color = SPEED_BOOST_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     SpeedStroke.Color = SPEED_BOOST_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     local char = LocalPlayer.Character
     if char and char:FindFirstChildOfClass("Humanoid") then
         char:FindFirstChildOfClass("Humanoid").WalkSpeed = SPEED_BOOST_ENABLED and 50 or 16
@@ -979,7 +664,6 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
     TriggerBotBtn.Text = TRIGGERBOT_ENABLED and "🎯 Trigger Bot: ON" or "🎯 Trigger Bot: OFF"
     TriggerBotGrad.Color = TRIGGERBOT_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     TriggerBotStroke.Color = TRIGGERBOT_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if TRIGGERBOT_ENABLED then
         triggerBotConnection = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
@@ -987,16 +671,12 @@ TriggerBotBtn.MouseButton1Click:Connect(function()
             local hrp = char.HumanoidRootPart
             local _, bossRoot = findTargetModel(RAKE_NAME)
             if not bossRoot then _, bossRoot = findTargetModel(TARGET_NAME) end
-
             if bossRoot and (hrp.Position - bossRoot.Position).Magnitude <= 15 then
                 executeSpamClick()
             end
         end)
     else
-        if triggerBotConnection then
-            triggerBotConnection:Disconnect()
-            triggerBotConnection = nil
-        end
+        if triggerBotConnection then triggerBotConnection:Disconnect() triggerBotConnection = nil end
     end
 end)
 
@@ -1005,13 +685,11 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
     AutoPickupBtn.Text = AUTO_PICKUP_ENABLED and "🎁 Universal Auto Pickup: ON" or "🎁 Universal Auto Pickup: OFF"
     AutoPickupGrad.Color = AUTO_PICKUP_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     AutoPickupStroke.Color = AUTO_PICKUP_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if AUTO_PICKUP_ENABLED then
         pickupLoop = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
             if not char or not char:FindFirstChild("HumanoidRootPart") then return end
             local hrp = char.HumanoidRootPart
-
             for _, item in ipairs(Workspace:GetDescendants()) do
                 if item:IsA("BasePart") then
                     for _, targetName in ipairs(TARGET_ITEMS) do
@@ -1025,10 +703,7 @@ AutoPickupBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        if pickupLoop then
-            pickupLoop:Disconnect()
-            pickupLoop = nil
-        end
+        if pickupLoop then pickupLoop:Disconnect() pickupLoop = nil end
     end
 end)
 
@@ -1037,7 +712,6 @@ ForceDropBtn.MouseButton1Click:Connect(function()
     ForceDropBtn.Text = FORCE_DROP_ENABLED and "💥 FORCE DROP 1000%: ON" or "💥 FORCE DROP 1000%: OFF"
     ForceDropGrad.Color = FORCE_DROP_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     ForceDropStroke.Color = FORCE_DROP_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if FORCE_DROP_ENABLED then
         forceDropLoop = task.spawn(function()
             while FORCE_DROP_ENABLED do
@@ -1049,10 +723,7 @@ ForceDropBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        if forceDropLoop then
-            task.cancel(forceDropLoop)
-            forceDropLoop = nil
-        end
+        if forceDropLoop then task.cancel(forceDropLoop) forceDropLoop = nil end
     end
 end)
 
@@ -1061,7 +732,6 @@ Spin30Btn.MouseButton1Click:Connect(function()
     Spin30Btn.Text = SPIN_30_ENABLED and "🎰 SPIN 30x: ON" or "🎰 SPIN 30x: OFF"
     Spin30Grad.Color = SPIN_30_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     Spin30Stroke.Color = SPIN_30_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if SPIN_30_ENABLED then
         spin30Loop = task.spawn(function()
             while SPIN_30_ENABLED do
@@ -1074,84 +744,83 @@ Spin30Btn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        if spin30Loop then
-            task.cancel(spin30Loop)
-            spin30Loop = nil
-        end
+        if spin30Loop then task.cancel(spin30Loop) spin30Loop = nil end
     end
 end)
 
 ToolRenamerBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
-    
-    local function renameToolsInContainer(container)
+    local function renameTools(container)
         if not container then return end
         for _, item in ipairs(container:GetChildren()) do
-            if item:IsA("Tool") then
-                item.Name = "🦈 Shark Blade"
-            end
+            if item:IsA("Tool") then item.Name = "🦈 Shark Blade" end
         end
     end
-
-    renameToolsInContainer(char)
-    renameToolsInContainer(backpack)
-    
+    renameTools(char)
+    renameTools(backpack)
     ToolRenamerBtn.Text = "✏️ TOOLS RENAMED!"
-    task.delay(2, function()
-        ToolRenamerBtn.Text = "✏️ RENAME ALL TOOLS"
-    end)
+    task.delay(2, function() ToolRenamerBtn.Text = "✏️ RENAME ALL TOOLS" end)
 end)
 
-MiniGameBtn.MouseButton1Click:Connect(function()
-    MiniGameFrame.Visible = not MiniGameFrame.Visible
-end)
-
--- World Luck Multipliers Helpers
-local function toggleLuck(tier, stateVar, btn, stroke, grad)
-    if tier == 250 then LUCK_250_ENABLED = stateVar end
-    if tier == 500 then LUCK_500_ENABLED = stateVar end
-    if tier == 750 then LUCK_750_ENABLED = stateVar end
-    if tier == 1000 then LUCK_1000_ENABLED = stateVar end
-
-    btn.Text = stateVar and ("⚡ " .. tostring(tier) .. "% WORLD LUCK: ON") or ("⚡ " .. tostring(tier) .. "% WORLD LUCK: OFF")
-    grad.Color = stateVar and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
-    stroke.Color = stateVar and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-    
-    local mult = (tier / 100)
-    if stateVar then
+Luck250Btn.MouseButton1Click:Connect(function()
+    LUCK_250_ENABLED = not LUCK_250_ENABLED
+    Luck250Btn.Text = LUCK_250_ENABLED and "🍀 250% WORLD LUCK: ON" or "🍀 250% WORLD LUCK: OFF"
+    Luck250Grad.Color = LUCK_250_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    Luck250Stroke.Color = LUCK_250_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+    if LUCK_250_ENABLED then
         task.spawn(function()
-            while true do
-                if tier == 250 and not LUCK_250_ENABLED then break end
-                if tier == 500 and not LUCK_500_ENABLED then break end
-                if tier == 750 and not LUCK_750_ENABLED then break end
-                if tier == 1000 and not LUCK_1000_ENABLED then break end
-
-                triggerGiftRainAndLoot(mult)
+            while LUCK_250_ENABLED do
+                triggerGiftRainAndLoot(2.5)
                 task.wait(0.5)
             end
         end)
     end
-end
-
-Luck250Btn.MouseButton1Click:Connect(function()
-    LUCK_250_ENABLED = not LUCK_250_ENABLED
-    toggleLuck(250, LUCK_250_ENABLED, Luck250Btn, Luck250Stroke, Luck250Grad)
 end)
 
 Luck500Btn.MouseButton1Click:Connect(function()
     LUCK_500_ENABLED = not LUCK_500_ENABLED
-    toggleLuck(500, LUCK_500_ENABLED, Luck500Btn, Luck500Stroke, Luck500Grad)
+    Luck500Btn.Text = LUCK_500_ENABLED and "🔥 500% WORLD LUCK: ON" or "🔥 500% WORLD LUCK: OFF"
+    Luck500Grad.Color = LUCK_500_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    Luck500Stroke.Color = LUCK_500_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+    if LUCK_500_ENABLED then
+        task.spawn(function()
+            while LUCK_500_ENABLED do
+                triggerGiftRainAndLoot(5.0)
+                task.wait(0.5)
+            end
+        end)
+    end
 end)
 
 Luck750Btn.MouseButton1Click:Connect(function()
     LUCK_750_ENABLED = not LUCK_750_ENABLED
-    toggleLuck(750, LUCK_750_ENABLED, Luck750Btn, Luck750Stroke, Luck750Grad)
+    Luck750Btn.Text = LUCK_750_ENABLED and "💎 750% WORLD LUCK: ON" or "💎 750% WORLD LUCK: OFF"
+    Luck750Grad.Color = LUCK_750_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    Luck750Stroke.Color = LUCK_750_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+    if LUCK_750_ENABLED then
+        task.spawn(function()
+            while LUCK_750_ENABLED do
+                triggerGiftRainAndLoot(7.5)
+                task.wait(0.5)
+            end
+        end)
+    end
 end)
 
 Luck1000Btn.MouseButton1Click:Connect(function()
     LUCK_1000_ENABLED = not LUCK_1000_ENABLED
-    toggleLuck(1000, LUCK_1000_ENABLED, Luck1000Btn, Luck1000Stroke, Luck1000Grad)
+    Luck1000Btn.Text = LUCK_1000_ENABLED and "⚡ 1000% WORLD LUCK: ON" or "⚡ 1000% WORLD LUCK: OFF"
+    Luck1000Grad.Color = LUCK_1000_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
+    Luck1000Stroke.Color = LUCK_1000_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
+    if LUCK_1000_ENABLED then
+        task.spawn(function()
+            while LUCK_1000_ENABLED do
+                triggerGiftRainAndLoot(10.0)
+                task.wait(0.5)
+            end
+        end)
+    end
 end)
 
 AutoEscapeBtn.MouseButton1Click:Connect(function()
@@ -1159,7 +828,6 @@ AutoEscapeBtn.MouseButton1Click:Connect(function()
     AutoEscapeBtn.Text = AUTO_ESCAPE_ENABLED and "🚨 Auto Escape: ON" or "🚨 Auto Escape (20% HP): OFF"
     AutoEscapeGrad.Color = AUTO_ESCAPE_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     AutoEscapeStroke.Color = AUTO_ESCAPE_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if AUTO_ESCAPE_ENABLED then
         escapeConnection = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
@@ -1171,10 +839,7 @@ AutoEscapeBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        if escapeConnection then
-            escapeConnection:Disconnect()
-            escapeConnection = nil
-        end
+        if escapeConnection then escapeConnection:Disconnect() escapeConnection = nil end
     end
 end)
 
@@ -1183,7 +848,6 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
     BringRakoofBtn.Text = BRING_RAKOOF_ENABLED and "🧲 Bring Rakoof: ON" or "🧲 Bring Rakoof: OFF"
     BringRakoofGrad.Color = BRING_RAKOOF_ENABLED and SHARK_ON_GRADIENT or SHARK_OFF_GRADIENT
     BringRakoofStroke.Color = BRING_RAKOOF_ENABLED and Color3.fromRGB(0, 220, 255) or Color3.fromRGB(15, 60, 100)
-
     if BRING_RAKOOF_ENABLED then
         bringRakoofLoop = RunService.Heartbeat:Connect(function()
             local char = LocalPlayer.Character
@@ -1195,9 +859,6 @@ BringRakoofBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        if bringRakoofLoop then
-            bringRakoofLoop:Disconnect()
-            bringRakoofLoop = nil
-        end
+        if bringRakoofLoop then bringRakoofLoop:Disconnect() bringRakoofLoop = nil end
     end
 end)
