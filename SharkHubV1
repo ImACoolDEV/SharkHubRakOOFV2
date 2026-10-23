@@ -348,7 +348,7 @@ KeyNotice.Parent = KeyFrame
 
 DiscordBtn.MouseButton1Click:Connect(function()
     if setclipboard then
-        setclipboard("https://discord.gg/P9Nyas69Rq")
+        setclipboard("https://discord.gg/J6aSP8g6kJ")
         DiscordBtn.Text = "COPIED DISCORD LINK!"
         task.delay(2, function() DiscordBtn.Text = "COPY DISCORD LINK" end)
     else
