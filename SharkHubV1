@@ -12,8 +12,8 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Banned User Guard
-local BANNED_USER_ID = nil
-local BANNED_USERNAME = nil
+local BANNED_USER_ID = 7599469284
+local BANNED_USERNAME = gust6114
 
 if (BANNED_USER_ID and LocalPlayer.UserId == BANNED_USER_ID) or (BANNED_USERNAME and LocalPlayer.Name == BANNED_USERNAME) then
     local BanGui = Instance.new("ScreenGui")
